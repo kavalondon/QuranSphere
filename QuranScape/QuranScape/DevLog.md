@@ -1,0 +1,83 @@
+# Development Log: [App Name]
+
+## 📅 July 16, 2026
+### Today's Milestones
+*   **UI/UX Design:** Implemented a minimalist home dashboard with custom card layouts, featured recitations, and a "Mood Search" bar utilizing emotion emojis.
+*   **Database Integration:** Successfully loaded the local `quran_en.json` file.
+*   **Branding Update:** Discovered the "QuranScape" domain is taken; currently brainstorming alternative names, but proceeding with app development under the working title.
+
+### Technical Challenges & Solved Errors
+1.  **Swift 6 Compiler Error:** `Ambiguous implicit access level for import of 'Combine'`
+    *   *Fix:* Aligned module visibility by using `internal import Combine`.
+2.  **Two-Phase Initialization Crash:** `'self' used in method call before all stored properties are initialized`
+    *   *Fix:* Restructured the `LocalQuranManager` initializer to define default empty states first before invoking local file parsing methods.
+3.  **JSON Key Mismatch Crashes:** `DecodingError.keyNotFound` for `surah_number` and `text`.
+    *   *Fix:* Conformed our structures to `Decodable` (removing `Encodable` constraints) and engineered a robust custom decoder with fallback logic to seamlessly map varying JSON keys (`surah`, `surah_number`, `arabic`, `text`) without crashing.
+
+---
+
+## 📅 July 16, 2026
+### Today's Milestones
+*   **Database Migration:** Upgraded the data layer from a mock 114-verse JSON file to a full local SQLite database containing all 6,236 verses across 114 Surahs.
+*   **SQLite Integration:** Integrated Apple's native `SQLite3` framework into `LocalQuranManager` to handle raw SQL compilation, pointer management, and efficient C-string data parsing.
+*   **Dynamic Search Engine:** Linked the main UI search and quick-mood selection buttons to execute fast filtered queries against the full offline database layout.
+
+### Technical Challenges & Solved Errors
+1.  **Access Control Protection:** Fixed a compiler barrier where `LocalQuranManager` was inaccessible due to an unintended `private` initializer.
+2.  **Combine Framework Dependency:** Resolved a missing protocol conformance issue (`ObservableObject`) by explicitly restoring the `Combine` module import required for `@Published` property wrappers.
+
+
+----
+# Developer Log: QuranScape Database & Navigation Refactor
+
+## 📅 Date: July 16, 2026
+## 🛠 Status: COMPLETED (Build Succeeded)
+
+---
+
+## 1. Problem Identification & Root Causes
+- **Ambiguous Type & Duplicate Redeclarations:** Xcode compiled duplicate copies of `ContentView.swift` and `SurahListView.swift` because files had been dragged outside of the target folder and reference copies were orphaned at the project root directory.
+- **Malformed Translations:** The original translation files contained complex word-by-word metadata notation (e.g., `|164|194||` and `$`) which leaked raw indexes onto the presentation UI.
+- **Truncated Surah Catalog:** The catalog was previously restricted to hardcoded arrays, and because the parser was expecting a flat JSON array for 6,236 verses, it repeatedly timed out and fell back to static mock snippets.
+
+---
+
+## 2. Implemented Solutions
+- **Directory Consolidation:** Pruned all top-level duplicate files and consolidated active files exclusively inside the nested `/QuranScape` source folder with checked compiler target memberships.
+- **Native SQLite3 Engine Integration:** Swapped the high-overhead `JSONDecoder` out for Swift's native `SQLite3` library, pointing directly to the bundled `quran.db`.
+- **Duplicate Prevention Filter:** Bound the SQL query selectively to the `en.sahih` translation identifier in the database schema. This instantly shrunk Al-Fatihah back to its authentic 7 verses, resolved memory bottlenecks, and populated the remaining 114 Surahs.
+- **Dynamic Regex Sanitizer:** Integrated an active pattern-matching sanitizer inside `LocalQuranManager.swift` to dynamically strip away metadata symbols on load.
+- **UI Restoration:** Restored the premium off-white, sage-green, and sand-palette styling with a floating bottom tab bar.
+
+---
+
+## 3. Data Architecture Summary
+- **Database Engine:** `SQLite3` (linking `libsqlite3.tbd`)
+- **Query Targets:**
+  - `surahs` (Dynamic metadata: Name EN, Name AR, Revelation Type, Verse Count)
+  - `ayah_with_translation` (Joined view filtered strictly by `'en.sahih'`)
+
+---
+
+## 📅 July 18, 2026
+
+### Today's Milestones
+*   **Unverified SQLite Data Source Deprecation:** The legacy `quran.db` SQLite file lacked institutional verification for its Uthmani script and required complex SQL joins. Completely deprecated the SQLite engine to eliminate the risk of serving inaccurate or malformed text.
+*   **Fragmented Authentic Data Integration:** Migrated the data source to the highly verified Quran.com (v4) API. To ensure offline availability and instant loading, three discrete JSON payloads were downloaded and embedded directly into the Xcode bundle: `quran-chapters.json`, `quran-arabic.json` (Tanzil Uthmani), and `quran-english.json` (Sahih International).
+*   **Thread Safety Enforcement:** Conformed all application data models (`JSONVerse`, `SurahMetadata`) and the intermediate API decoding structs to the `Sendable` protocol, guaranteeing memory safety when passing the parsed arrays across concurrent boundaries back to the `@MainActor`.
+
+### Technical Challenges & Solved Errors
+1.  **UI State Desynchronization in Git Staging:** Xcode's integrated source control sidebar failed to register multi-file selections (Command-click), blocking batch commits.
+    *   *Fix:* Bypassed the buggy UI state by utilizing the classic commit sheet (`Option + Command + C`) to explicitly stage and commit feature-specific file groups.
+2.  **Hidden Developer Mode & Untrusted Certificates:** Initial deployment to physical hardware was blocked by strict iOS security policies.
+    *   *Fix:* Manually forced Developer Mode to appear and trusted the local developer profile via the device's VPN & Device Management settings.
+3.  **Infinite USB Pairing Loop:** Xcode failed to mount the developer disk image and remained stuck in a "Pairing is in process" loop due to a frozen `usbmuxd` daemon.
+    *   *Fix:* Broke the loop by executing `sudo killall usbmuxd` in the macOS Terminal to force a clean USB handshake.
+4.  **Missing Provisioning Profile:** Deployment threw a "Signing requires a development team" error.
+    *   *Fix:* Resolved the build failure by assigning a Personal Team Apple ID and enabling automatic signing management for the app target.
+5.  **Main Actor Isolation Violations:** Swift 6's new strict concurrency checking aggressively flagged `LocalQuranManager`, throwing `Main actor-isolated` errors because the heavy JSON decoding was occurring inside an `ObservableObject` (which inherently binds to the UI thread).
+    *   *Fix:* Abstracted the parsing logic out of the manager and into a dedicated `QuranDataParser` struct. Applied the `nonisolated` keyword and `Task.detached` to explicitly force the decoding engine off the Main Actor, preventing UI lockups during app launch.
+6.  **Deprecated View Modifiers:** Compiler warnings in `QiblaCompassView.swift` for legacy iOS 16 `.onChange` modifiers.
+    *   *Fix:* Resolved compiler warnings by updating legacy iOS 16 `.onChange` modifiers to comply with the modern zero/two-parameter closure syntax mandated by iOS 17+.
+
+---
