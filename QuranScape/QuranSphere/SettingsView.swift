@@ -69,7 +69,7 @@ struct SettingsView: View {
                     Image(systemName: "leaf.fill")
                         .foregroundColor(Color(red: 0.38, green: 0.48, blue: 0.43).opacity(0.5))
                         .font(.system(size: 20))
-                    Text("QuranScape v1.0")
+                    Text("QuranSphere v1.0")
                         .font(.system(.caption, design: .serif))
                         .foregroundColor(.gray)
                     Text("Made with peace")

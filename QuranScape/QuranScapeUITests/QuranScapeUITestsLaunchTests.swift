@@ -1,13 +1,13 @@
 //
-//  QuranScapeUITestsLaunchTests.swift
-//  QuranScapeUITests
+//  QuranSphereUITestsLaunchTests.swift
+//  QuranSphereUITests
 //
 //  Created by Khaver Javed on 15/07/2026.
 //
 
 import XCTest
 
-final class QuranScapeUITestsLaunchTests: XCTestCase {
+final class QuranSphereUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

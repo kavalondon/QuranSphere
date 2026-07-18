@@ -4,7 +4,7 @@
 ### Today's Milestones
 *   **UI/UX Design:** Implemented a minimalist home dashboard with custom card layouts, featured recitations, and a "Mood Search" bar utilizing emotion emojis.
 *   **Database Integration:** Successfully loaded the local `quran_en.json` file.
-*   **Branding Update:** Discovered the "QuranScape" domain is taken; currently brainstorming alternative names, but proceeding with app development under the working title.
+*   **Branding Update:** Discovered the "QuranSphere" domain is taken; currently brainstorming alternative names, but proceeding with app development under the working title.
 
 ### Technical Challenges & Solved Errors
 1.  **Swift 6 Compiler Error:** `Ambiguous implicit access level for import of 'Combine'`
@@ -28,7 +28,7 @@
 
 
 ----
-# Developer Log: QuranScape Database & Navigation Refactor
+# Developer Log: QuranSphere Database & Navigation Refactor
 
 ## 📅 Date: July 16, 2026
 ## 🛠 Status: COMPLETED (Build Succeeded)
@@ -43,7 +43,7 @@
 ---
 
 ## 2. Implemented Solutions
-- **Directory Consolidation:** Pruned all top-level duplicate files and consolidated active files exclusively inside the nested `/QuranScape` source folder with checked compiler target memberships.
+- **Directory Consolidation:** Pruned all top-level duplicate files and consolidated active files exclusively inside the nested `/QuranSphere` source folder with checked compiler target memberships.
 - **Native SQLite3 Engine Integration:** Swapped the high-overhead `JSONDecoder` out for Swift's native `SQLite3` library, pointing directly to the bundled `quran.db`.
 - **Duplicate Prevention Filter:** Bound the SQL query selectively to the `en.sahih` translation identifier in the database schema. This instantly shrunk Al-Fatihah back to its authentic 7 verses, resolved memory bottlenecks, and populated the remaining 114 Surahs.
 - **Dynamic Regex Sanitizer:** Integrated an active pattern-matching sanitizer inside `LocalQuranManager.swift` to dynamically strip away metadata symbols on load.

@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		5E7B35A8300C0F2800A9388F /* QuranSphere in Resources */ = {isa = PBXBuildFile; fileRef = 5E7B35A7300C0EEB00A9388F /* QuranSphere */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		5E2BDBC33007EB63007BD194 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,17 +28,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		5E2BDBB53007EB5C007BD194 /* QuranScape.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuranScape.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		5E2BDBC23007EB63007BD194 /* QuranScapeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuranScapeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		5E2BDBCC3007EB63007BD194 /* QuranScapeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuranScapeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5E2BDBB53007EB5C007BD194 /* QuranSphere.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuranSphere.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5E2BDBC23007EB63007BD194 /* QuranSphereTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuranSphereTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5E2BDBCC3007EB63007BD194 /* QuranSphereUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuranSphereUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5E7B35A7300C0EEB00A9388F /* QuranSphere */ = {isa = PBXFileReference; lastKnownFileType = folder; path = QuranSphere; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		5E2BDBB73007EB5C007BD194 /* QuranScape */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = QuranScape;
-			sourceTree = "<group>";
-		};
 		5E2BDBC53007EB63007BD194 /* QuranScapeTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = QuranScapeTests;
@@ -75,7 +75,7 @@
 		5E2BDBAC3007EB5C007BD194 = {
 			isa = PBXGroup;
 			children = (
-				5E2BDBB73007EB5C007BD194 /* QuranScape */,
+				5E7B35A7300C0EEB00A9388F /* QuranSphere */,
 				5E2BDBC53007EB63007BD194 /* QuranScapeTests */,
 				5E2BDBCF3007EB63007BD194 /* QuranScapeUITests */,
 				5E2BDBB63007EB5C007BD194 /* Products */,
@@ -85,9 +85,9 @@
 		5E2BDBB63007EB5C007BD194 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				5E2BDBB53007EB5C007BD194 /* QuranScape.app */,
-				5E2BDBC23007EB63007BD194 /* QuranScapeTests.xctest */,
-				5E2BDBCC3007EB63007BD194 /* QuranScapeUITests.xctest */,
+				5E2BDBB53007EB5C007BD194 /* QuranSphere.app */,
+				5E2BDBC23007EB63007BD194 /* QuranSphereTests.xctest */,
+				5E2BDBCC3007EB63007BD194 /* QuranSphereUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,9 +95,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		5E2BDBB43007EB5C007BD194 /* QuranScape */ = {
+		5E2BDBB43007EB5C007BD194 /* QuranSphere */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5E2BDBD63007EB63007BD194 /* Build configuration list for PBXNativeTarget "QuranScape" */;
+			buildConfigurationList = 5E2BDBD63007EB63007BD194 /* Build configuration list for PBXNativeTarget "QuranSphere" */;
 			buildPhases = (
 				5E2BDBB13007EB5C007BD194 /* Sources */,
 				5E2BDBB23007EB5C007BD194 /* Frameworks */,
@@ -107,19 +107,16 @@
 			);
 			dependencies = (
 			);
-			fileSystemSynchronizedGroups = (
-				5E2BDBB73007EB5C007BD194 /* QuranScape */,
-			);
-			name = QuranScape;
+			name = QuranSphere;
 			packageProductDependencies = (
 			);
 			productName = QuranScape;
-			productReference = 5E2BDBB53007EB5C007BD194 /* QuranScape.app */;
+			productReference = 5E2BDBB53007EB5C007BD194 /* QuranSphere.app */;
 			productType = "com.apple.product-type.application";
 		};
-		5E2BDBC13007EB63007BD194 /* QuranScapeTests */ = {
+		5E2BDBC13007EB63007BD194 /* QuranSphereTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5E2BDBD93007EB63007BD194 /* Build configuration list for PBXNativeTarget "QuranScapeTests" */;
+			buildConfigurationList = 5E2BDBD93007EB63007BD194 /* Build configuration list for PBXNativeTarget "QuranSphereTests" */;
 			buildPhases = (
 				5E2BDBBE3007EB63007BD194 /* Sources */,
 				5E2BDBBF3007EB63007BD194 /* Frameworks */,
@@ -133,16 +130,16 @@
 			fileSystemSynchronizedGroups = (
 				5E2BDBC53007EB63007BD194 /* QuranScapeTests */,
 			);
-			name = QuranScapeTests;
+			name = QuranSphereTests;
 			packageProductDependencies = (
 			);
 			productName = QuranScapeTests;
-			productReference = 5E2BDBC23007EB63007BD194 /* QuranScapeTests.xctest */;
+			productReference = 5E2BDBC23007EB63007BD194 /* QuranSphereTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		5E2BDBCB3007EB63007BD194 /* QuranScapeUITests */ = {
+		5E2BDBCB3007EB63007BD194 /* QuranSphereUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5E2BDBDC3007EB63007BD194 /* Build configuration list for PBXNativeTarget "QuranScapeUITests" */;
+			buildConfigurationList = 5E2BDBDC3007EB63007BD194 /* Build configuration list for PBXNativeTarget "QuranSphereUITests" */;
 			buildPhases = (
 				5E2BDBC83007EB63007BD194 /* Sources */,
 				5E2BDBC93007EB63007BD194 /* Frameworks */,
@@ -156,11 +153,11 @@
 			fileSystemSynchronizedGroups = (
 				5E2BDBCF3007EB63007BD194 /* QuranScapeUITests */,
 			);
-			name = QuranScapeUITests;
+			name = QuranSphereUITests;
 			packageProductDependencies = (
 			);
 			productName = QuranScapeUITests;
-			productReference = 5E2BDBCC3007EB63007BD194 /* QuranScapeUITests.xctest */;
+			productReference = 5E2BDBCC3007EB63007BD194 /* QuranSphereUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -186,7 +183,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 5E2BDBB03007EB5C007BD194 /* Build configuration list for PBXProject "QuranScape" */;
+			buildConfigurationList = 5E2BDBB03007EB5C007BD194 /* Build configuration list for PBXProject "QuranSphere" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -200,9 +197,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				5E2BDBB43007EB5C007BD194 /* QuranScape */,
-				5E2BDBC13007EB63007BD194 /* QuranScapeTests */,
-				5E2BDBCB3007EB63007BD194 /* QuranScapeUITests */,
+				5E2BDBB43007EB5C007BD194 /* QuranSphere */,
+				5E2BDBC13007EB63007BD194 /* QuranSphereTests */,
+				5E2BDBCB3007EB63007BD194 /* QuranSphereUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -212,6 +209,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5E7B35A8300C0F2800A9388F /* QuranSphere in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -258,12 +256,12 @@
 /* Begin PBXTargetDependency section */
 		5E2BDBC43007EB63007BD194 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 5E2BDBB43007EB5C007BD194 /* QuranScape */;
+			target = 5E2BDBB43007EB5C007BD194 /* QuranSphere */;
 			targetProxy = 5E2BDBC33007EB63007BD194 /* PBXContainerItemProxy */;
 		};
 		5E2BDBCE3007EB63007BD194 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 5E2BDBB43007EB5C007BD194 /* QuranScape */;
+			target = 5E2BDBB43007EB5C007BD194 /* QuranSphere */;
 			targetProxy = 5E2BDBCD3007EB63007BD194 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -469,7 +467,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/QuranScape.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/QuranScape";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/QuranSphere.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/QuranSphere";
 			};
 			name = Debug;
 		};
@@ -490,7 +488,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/QuranScape.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/QuranScape";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/QuranSphere.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/QuranSphere";
 			};
 			name = Release;
 		};
@@ -535,7 +533,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		5E2BDBB03007EB5C007BD194 /* Build configuration list for PBXProject "QuranScape" */ = {
+		5E2BDBB03007EB5C007BD194 /* Build configuration list for PBXProject "QuranSphere" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5E2BDBD43007EB63007BD194 /* Debug */,
@@ -544,7 +542,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5E2BDBD63007EB63007BD194 /* Build configuration list for PBXNativeTarget "QuranScape" */ = {
+		5E2BDBD63007EB63007BD194 /* Build configuration list for PBXNativeTarget "QuranSphere" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5E2BDBD73007EB63007BD194 /* Debug */,
@@ -553,7 +551,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5E2BDBD93007EB63007BD194 /* Build configuration list for PBXNativeTarget "QuranScapeTests" */ = {
+		5E2BDBD93007EB63007BD194 /* Build configuration list for PBXNativeTarget "QuranSphereTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5E2BDBDA3007EB63007BD194 /* Debug */,
@@ -562,7 +560,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5E2BDBDC3007EB63007BD194 /* Build configuration list for PBXNativeTarget "QuranScapeUITests" */ = {
+		5E2BDBDC3007EB63007BD194 /* Build configuration list for PBXNativeTarget "QuranSphereUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5E2BDBDD3007EB63007BD194 /* Debug */,

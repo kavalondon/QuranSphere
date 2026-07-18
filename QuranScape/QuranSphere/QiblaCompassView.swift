@@ -1,6 +1,6 @@
 //
 //  QiblaCompassView.swift
-//  QuranScape
+//  QuranSphere
 //
 //  Created by Khaver Javed on 16/07/2026.
 //

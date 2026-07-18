@@ -1,13 +1,13 @@
 //
-//  QuranScapeUITests.swift
-//  QuranScapeUITests
+//  QuranSphereUITests.swift
+//  QuranSphereUITests
 //
 //  Created by Khaver Javed on 15/07/2026.
 //
 
 import XCTest
 
-final class QuranScapeUITests: XCTestCase {
+final class QuranSphereUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

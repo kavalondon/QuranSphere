@@ -97,7 +97,7 @@ struct ContentView: View {
                 Text("Assalamu Alaykum")
                     .font(.system(.subheadline))
                     .foregroundColor(.gray)
-                Text("quranscape")
+                Text("QuranSphere")
                     .font(.system(.title, design: .serif))
                     .foregroundColor(isDarkMode ? .white : Color(red: 0.20, green: 0.25, blue: 0.22))
             }
