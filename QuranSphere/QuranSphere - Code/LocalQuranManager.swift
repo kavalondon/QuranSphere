@@ -369,4 +369,6 @@ class LocalQuranManager: ObservableObject {
         
         return nil
     }
+    
 }
+

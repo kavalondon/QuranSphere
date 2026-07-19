@@ -97,3 +97,15 @@ Technical Challenges & Solved Errors
 •    Fix: Renamed the @Published data array to chapters and injected computed properties (var transliteration: String { nameEN }) directly into the SurahMetadata model, seamlessly bridging the parsed JSON keys to the UI's expected variables without disrupting the backend decoder.
 
 ---
+
+📅 July 19, 2026
+Today's Milestones
+•    Audio & Interactivity Activation: Successfully hooked up AVFoundation to stream Mishary Alafasy recitations directly from the Islamic Network API for individual verses. Replaced static placeholder buttons with a fully functional iOS ShareLink for exporting verses and built out robust bookmarking logic tied directly to @AppStorage.
+•    Unified Dark Mode Engine: Resolved severe legibility issues (black text on dark backgrounds/white text on light backgrounds) across both the SurahListView and QuranReaderView. Implemented structural .preferredColorScheme() modifiers to bridge the custom @AppStorage dark mode toggle with system-level UI elements, ensuring navigation bars and dynamic text colors flip correctly.
+Technical Challenges & Solved Errors
+1.    Invisible Tap Targets in Lists: Surah cards within the SurahListView were completely unclickable. The NavigationLink was wrapped around an EmptyView() inside a ZStack, which SwiftUI renders with a zero-pixel size, resulting in no physical tap area.
+•    Fix: Replaced EmptyView() with an expanding Color.clear layer over the visual components, making the entire card a clean, clickable surface while preserving the custom chevron-free design.
+2.    Mutating State on Immutable Values: The Swift compiler threw a "Cannot use mutating member on immutable value: 'self' is immutable" error when attempting to toggle favorite Surah IDs. The function was trying to mutate a computed property from inside a standard, non-mutating SwiftUI struct.
+•    Fix: Bypassed the computed property setter and updated the underlying @AppStorage string directly (favoriteSurahIDsStr = current.map...), allowing SwiftUI's built-in property wrappers to handle the state change safely without requiring mutating methods.
+3.    Missing Type in Scope Compilation Errors: The build system failed with a cascade of cryptic errors (Generic parameter 'C' could not be inferred, Cannot infer key path type from context, and Cannot find type 'SurahMetadataModel' in scope) when the view attempted to iterate over the Surah list.
+•    Fix: Identified that the static 114-Surah metadata payload had been accidentally truncated from the bottom of the file during a previous copy-paste. Restored the full SurahMetadataModel struct, instantly resolving the compiler's generic inference and scoping failures.

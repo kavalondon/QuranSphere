@@ -15,10 +15,11 @@ struct ContentView: View {
     @AppStorage("lastReadSurah") private var lastReadSurah = 1
     @AppStorage("lastReadSurahName") private var lastReadSurahName = "Al-Fatihah"
     @AppStorage("lastReadVerse") private var lastReadVerse = 1
-    @AppStorage("readingProgress") private var readingProgress: Double = 0.35
+    @AppStorage("readingProgress") private var readingProgress: Double = 0.0
     
     // MARK: - State
     @State private var activeTab: Tab = .home
+    @State private var searchText: String = ""
     @State private var selectedMood: String = ""
     @State private var currentComfortVerse: JSONVerse? = nil
     
@@ -29,11 +30,9 @@ struct ContentView: View {
         ("🤲 Grateful", "grateful")
     ]
     
-    // MARK: - Main Body
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
-                // Background
                 Group {
                     if isDarkMode {
                         Color(red: 0.10, green: 0.12, blue: 0.11)
@@ -43,7 +42,6 @@ struct ContentView: View {
                 }
                 .ignoresSafeArea()
                 
-                // Tab Content
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
                         switch activeTab {
@@ -55,7 +53,6 @@ struct ContentView: View {
                     .padding(.bottom, 100)
                 }
                 
-                // Floating Bar
                 floatingTabBar
                     .padding(.bottom, 12)
             }
@@ -73,7 +70,7 @@ extension ContentView {
     private var homeView: some View {
         VStack(alignment: .leading, spacing: 28) {
             moodAndSearchSection
-                .padding(.top, 16) // Removed titles, starts right at the mood tracker
+                .padding(.top, 16)
             comfortVerseSection
             continueReadingCard
             quickLinksGrid
@@ -93,8 +90,9 @@ extension ContentView {
                     Spacer().frame(width: 16)
                     ForEach(moods, id: \.1) { label, key in
                         Button(action: {
+                            searchText = ""
                             selectedMood = key
-                            triggerSearch(for: key)
+                            triggerFastSearch(for: key)
                         }) {
                             Text(label)
                                 .font(.system(.subheadline, design: .serif))
@@ -113,15 +111,27 @@ extension ContentView {
                 }
             }
             
-            // 🌟 FIXED: Lag-Free Search Bar Component
-            MinimalSearchBar(isDarkMode: isDarkMode) { submittedText in
-                selectedMood = ""
-                triggerSearch(for: submittedText)
+            // Search Bar
+            HStack {
+                Image(systemName: "magnifyingglass").foregroundColor(.gray)
+                TextField("Search verses, topics...", text: $searchText)
+                    .font(.system(.body, design: .serif))
+                    .submitLabel(.search)
+                    .onSubmit {
+                        let query = searchText
+                        searchText = ""
+                        selectedMood = ""
+                        triggerFastSearch(for: query)
+                    }
             }
+            .padding(16)
+            .background(isDarkMode ? Color.white.opacity(0.08) : Color.white)
+            .cornerRadius(14)
+            .padding(.horizontal, 24)
         }
     }
     
-    // 2. Comfort Verse Result
+    // 2. Comfort Verse Result (Directly embedded safely with full unclipped layout)
     @ViewBuilder
     private var comfortVerseSection: some View {
         if let verse = currentComfortVerse {
@@ -131,31 +141,34 @@ extension ContentView {
                         .font(.system(.caption, design: .monospaced)).bold()
                         .foregroundColor(Color(red: 0.38, green: 0.48, blue: 0.43))
                     Spacer()
-                    Button(action: { triggerSearch(for: selectedMood.isEmpty ? "peace" : selectedMood) }) {
+                    Button(action: {
+                        let target = selectedMood.isEmpty ? "peace" : selectedMood
+                        triggerFastSearch(for: target)
+                    }) {
                         Image(systemName: "arrow.clockwise").foregroundColor(.gray)
                     }
                 }
+                
+                // Unclamped text container for Arabic text ensuring complete display without truncation
                 Text(verse.text)
                     .font(.system(.title3, design: .serif))
                     .multilineTextAlignment(.trailing)
                     .frame(maxWidth: .infinity, alignment: .trailing)
                 
-                Text(verse.translation)
+                // Unclamped text container for English translation ensuring complete viewability
+                Text(cleanTranslation(verse.translation))
                     .font(.system(.body, design: .serif))
                     .foregroundColor(isDarkMode ? .white.opacity(0.7) : .gray)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(20)
-            .background(isDarkMode ? Color.white.opacity(0.06) : Color.white)
-            .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
+            .minimalCardStyle(isDarkMode: isDarkMode)
             .padding(.horizontal, 24)
         }
     }
     
-    // 3. Continue Reading Card
     private var continueReadingCard: some View {
         NavigationLink(destination: QuranReaderView(surahNumber: lastReadSurah, surahName: lastReadSurahName)) {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 16) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Continue Reading")
@@ -171,7 +184,7 @@ extension ContentView {
                         .foregroundColor(Color(red: 0.38, green: 0.48, blue: 0.43))
                 }
                 
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Text("Overall Progress")
                             .font(.system(size: 12, weight: .bold, design: .rounded))
@@ -179,51 +192,42 @@ extension ContentView {
                         Spacer()
                         Text("\(Int(readingProgress * 100))%")
                             .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundColor(Color(red: 0.38, green: 0.48, blue: 0.43))
+                            .foregroundColor(.gray)
                     }
                     ProgressView(value: readingProgress)
-                        .progressViewStyle(LinearProgressViewStyle(tint: Color(red: 0.38, green: 0.48, blue: 0.43)))
+                        .progressViewStyle(LinearProgressViewStyle(tint: Color(red: 0.55, green: 0.55, blue: 0.52)))
                 }
             }
-            .padding(20)
-            .background(isDarkMode ? Color.white.opacity(0.06) : Color.white)
-            .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
+            .minimalCardStyle(isDarkMode: isDarkMode)
         }
         .buttonStyle(PlainButtonStyle())
         .padding(.horizontal, 24)
     }
     
-    // 4. Grid Links
     private var quickLinksGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-            
-            // 🌟 FIXED: Changed to "The Holy Quran"
             NavigationLink(destination: SurahListView()) {
                 pageCard(title: "The Holy Quran", icon: "book.fill", bgColor: Color(red: 0.38, green: 0.48, blue: 0.43))
             }.buttonStyle(PlainButtonStyle())
             
-            // 🌟 FIXED: Added Daily Duas
-            NavigationLink(destination: Text("Duas View Coming Soon")) {
-                pageCard(title: "Daily Duas", icon: "hands.sparkles.fill", bgColor: Color(red: 0.55, green: 0.65, blue: 0.60))
+            NavigationLink(destination: Text("Daily Duas Coming Soon")) {
+                pageCard(title: "Daily Duas", icon: "sparkles", bgColor: Color(red: 0.52, green: 0.61, blue: 0.56))
             }.buttonStyle(PlainButtonStyle())
             
             NavigationLink(destination: Text("Bookmarks Coming Soon")) {
-                pageCard(title: "Bookmarks", icon: "bookmark.fill", bgColor: Color(red: 0.46, green: 0.54, blue: 0.50))
+                pageCard(title: "Bookmarks", icon: "bookmark.fill", bgColor: Color(red: 0.38, green: 0.48, blue: 0.43))
             }.buttonStyle(PlainButtonStyle())
             
-            // Kept Ya-Seen to round out the grid nicely
-            NavigationLink(destination: QuranReaderView(surahNumber: 36, surahName: "Ya-Seen")) {
-                pageCard(title: "Ya-Seen", icon: "heart.fill", bgColor: Color(red: 0.85, green: 0.71, blue: 0.54))
+            NavigationLink(destination: SurahListView()) {
+                pageCard(title: "Favourite Surahs", icon: "star.fill", bgColor: Color(red: 0.83, green: 0.67, blue: 0.51))
             }.buttonStyle(PlainButtonStyle())
         }
         .padding(.horizontal, 24)
     }
 }
 
-// MARK: - Reusable UI Components
+// MARK: - Helpers
 extension ContentView {
-    
     private func pageCard(title: String, icon: String, bgColor: Color) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Image(systemName: icon)
@@ -236,9 +240,9 @@ extension ContentView {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(height: 100)
+        .frame(minHeight: 110, maxHeight: 110)
         .background(bgColor)
-        .cornerRadius(14)
+        .cornerRadius(16)
     }
     
     private var themeToggle: some View {
@@ -296,50 +300,83 @@ extension ContentView {
         .padding(.top, 100)
     }
     
-    private func triggerSearch(for term: String) {
-        guard !term.isEmpty else { return }
-        let matchedVerses = quranManager.findVerses(for: term)
-        withAnimation(.easeInOut(duration: 0.2)) {
-            if let randomMatch = matchedVerses.randomElement() {
-                currentComfortVerse = randomMatch
-            } else {
-                currentComfortVerse = quranManager.verses.randomElement()
+    // MARK: - Reliable Direct Match Search Logic
+    private func triggerFastSearch(for term: String) {
+        let cleanTerm = term.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanTerm.isEmpty else { return }
+        guard QuranSearchManager.isSafe(cleanTerm) else { return }
+        
+        let allVerses = quranManager.verses
+        
+        DispatchQueue.global(qos: .userInitiated).async {
+            let selectedVerse = QuranSearchManager.findBestVerse(for: cleanTerm, from: allVerses)
+            
+            DispatchQueue.main.async {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    currentComfortVerse = selectedVerse
+                }
             }
         }
     }
+    
+    private func cleanTranslation(_ text: String) -> String {
+        let pattern = "\\[\\d+\\]|[\\*\\#\\~]"
+        return text.replacingOccurrences(of: pattern, with: "", options: .regularExpression)
+                   .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
 
-// MARK: - 🌟 FIXED: Independent Search Bar
-// This stops the keyboard from lagging while typing!
-struct MinimalSearchBar: View {
-    @State private var typedText: String = ""
-    var isDarkMode: Bool
-    var onSearch: (String) -> Void
+// MARK: - View Modifiers
+extension View {
+    func minimalCardStyle(isDarkMode: Bool) -> some View {
+        self
+            .padding(20)
+            .background(isDarkMode ? Color.white.opacity(0.06) : Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
+    }
+}
+
+// MARK: - Robust Search & Thematic Manager
+struct QuranSearchManager {
+    static let thematicVerses: [String: [(surah: Int, verse: Int)]] = [
+        "anxious": [(13, 28), (2, 152), (9, 40), (94, 5), (94, 6)],
+        "sad": [(12, 87), (3, 139), (94, 5), (2, 155)],
+        "stressed": [(94, 6), (2, 286), (65, 3), (13, 28)],
+        "grateful": [(14, 7), (2, 152), (55, 13), (31, 12)],
+        "peace": [(13, 28), (48, 4), (2, 45)],
+        "hope": [(39, 53), (94, 5), (12, 87)]
+    ]
     
-    var body: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.gray)
-            
-            TextField("Search verses, topics...", text: $typedText)
-                .font(.system(.body, design: .serif))
-                .submitLabel(.search)
-                .onSubmit {
-                    onSearch(typedText)
-                }
-            
-            if !typedText.isEmpty {
-                Button(action: {
-                    typedText = ""
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray.opacity(0.5))
+    static let bannedWords: Set<String> = [
+        "suicide", "kill", "die", "death"
+    ]
+    
+    static func isSafe(_ query: String) -> Bool {
+        let words = Set(query.lowercased().components(separatedBy: .whitespacesAndNewlines))
+        return words.isDisjoint(with: bannedWords)
+    }
+    
+    static func findBestVerse(for query: String, from allVerses: [JSONVerse]) -> JSONVerse? {
+        guard !allVerses.isEmpty else { return nil }
+        let lowQuery = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // 1. Direct thematic match lookup
+        for (key, versesList) in thematicVerses {
+            if lowQuery.contains(key) || key.contains(lowQuery) {
+                if let target = versesList.randomElement(),
+                   let found = allVerses.first(where: { $0.surahNumber == target.surah && $0.verseNumber == target.verse }) {
+                    return found
                 }
             }
         }
-        .padding(16)
-        .background(isDarkMode ? Color.white.opacity(0.08) : Color.white)
-        .cornerRadius(14)
-        .padding(.horizontal, 24)
+        
+        // 2. Fallback text search
+        let matched = allVerses.filter {
+            $0.translation.localizedCaseInsensitiveContains(lowQuery) ||
+            $0.text.localizedCaseInsensitiveContains(lowQuery)
+        }
+        
+        return matched.randomElement() ?? allVerses.randomElement()
     }
 }

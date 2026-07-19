@@ -25,6 +25,12 @@
 		5E854DA1300C55AA00E627E6 /* quran-arabic.json in Resources */ = {isa = PBXBuildFile; fileRef = 5E854D8B300C55AA00E627E6 /* quran-arabic.json */; };
 		5E854DA2300C55AA00E627E6 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5E854D81300C55AA00E627E6 /* Assets.xcassets */; };
 		5E854DA3300C55AA00E627E6 /* DevLog.md in Resources */ = {isa = PBXBuildFile; fileRef = 5E854D84300C55AA00E627E6 /* DevLog.md */; };
+		5E854DA8300CECBC00E627E6 /* _PDMS_Saleem_QuranFont Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5E854DA7300CECBC00E627E6 /* _PDMS_Saleem_QuranFont Regular.ttf */; };
+		5E854DA9300CECBC00E627E6 /* _PDMS_Saleem_QuranFont Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5E854DA7300CECBC00E627E6 /* _PDMS_Saleem_QuranFont Regular.ttf */; };
+		5E854DAC300CECD200E627E6 /* AmiriQuran-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5E854DAB300CECD200E627E6 /* AmiriQuran-Regular.ttf */; };
+		5E854DAD300CECD200E627E6 /* AmiriQuran-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5E854DAB300CECD200E627E6 /* AmiriQuran-Regular.ttf */; };
+		5E854DAF300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5E854DAE300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf */; };
+		5E854DB0300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5E854DAE300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -67,6 +73,10 @@
 		5E854D90300C55AA00E627E6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		5E854D91300C55AA00E627E6 /* SurahListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SurahListView.swift; sourceTree = "<group>"; };
 		5E854DA4300C55B400E627E6 /* QuranSphere-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "QuranSphere-Bridging-Header.h"; sourceTree = "<group>"; };
+		5E854DA7300CECBC00E627E6 /* _PDMS_Saleem_QuranFont Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "_PDMS_Saleem_QuranFont Regular.ttf"; sourceTree = "<group>"; };
+		5E854DAB300CECD200E627E6 /* AmiriQuran-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "AmiriQuran-Regular.ttf"; sourceTree = "<group>"; };
+		5E854DAE300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KFGQPC Uthman Taha Naskh Regular.ttf"; sourceTree = "<group>"; };
+		5E854DB2300CEEF400E627E6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = Info.plist; path = QuranSphere/Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -110,6 +120,7 @@
 		5E2BDBAC3007EB5C007BD194 = {
 			isa = PBXGroup;
 			children = (
+				5E854DB2300CEEF400E627E6 /* Info.plist */,
 				5E854DA5300C564F00E627E6 /* QuranSphere - Code */,
 				5E2BDBC53007EB63007BD194 /* QuranSphereTests */,
 				5E2BDBCF3007EB63007BD194 /* QuranSphereUITests */,
@@ -131,6 +142,7 @@
 		5E854DA5300C564F00E627E6 /* QuranSphere - Code */ = {
 			isa = PBXGroup;
 			children = (
+				5E854DB1300CEDF800E627E6 /* Fonts */,
 				5E854D80300C55AA00E627E6 /* AppSettingsView.swift */,
 				5E854D81300C55AA00E627E6 /* Assets.xcassets */,
 				5E854D82300C55AA00E627E6 /* Color+Palette.swift */,
@@ -151,6 +163,16 @@
 				5E854D91300C55AA00E627E6 /* SurahListView.swift */,
 			);
 			path = "QuranSphere - Code";
+			sourceTree = "<group>";
+		};
+		5E854DB1300CEDF800E627E6 /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				5E854DA7300CECBC00E627E6 /* _PDMS_Saleem_QuranFont Regular.ttf */,
+				5E854DAB300CECD200E627E6 /* AmiriQuran-Regular.ttf */,
+				5E854DAE300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -273,9 +295,12 @@
 			files = (
 				5E854D9F300C55AA00E627E6 /* quran-chapters.json in Resources */,
 				5E854DA0300C55AA00E627E6 /* quran-english.json in Resources */,
+				5E854DA8300CECBC00E627E6 /* _PDMS_Saleem_QuranFont Regular.ttf in Resources */,
 				5E854DA1300C55AA00E627E6 /* quran-arabic.json in Resources */,
 				5E854DA2300C55AA00E627E6 /* Assets.xcassets in Resources */,
 				5E854DA3300C55AA00E627E6 /* DevLog.md in Resources */,
+				5E854DAF300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf in Resources */,
+				5E854DAC300CECD200E627E6 /* AmiriQuran-Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -283,6 +308,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5E854DB0300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf in Resources */,
+				5E854DAD300CECD200E627E6 /* AmiriQuran-Regular.ttf in Resources */,
+				5E854DA9300CECBC00E627E6 /* _PDMS_Saleem_QuranFont Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -478,6 +506,7 @@
 				DEVELOPMENT_TEAM = 3XJJK875MN;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = QuranSphere/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -516,6 +545,7 @@
 				DEVELOPMENT_TEAM = 3XJJK875MN;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = QuranSphere/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
