@@ -209,8 +209,6 @@ struct QuranReaderView: View {
                 }
                 
                 Spacer()
-                
-                // Removed the unused book/pencil icons here to clean up the interface
             }
         }
         .padding(24)
@@ -312,7 +310,14 @@ struct QuranReaderView: View {
         if isPlayingAudio {
             stopAudio()
         } else {
-            // Uses global verse ID for standard API audio fetching (Mishary Alafasy)
+            // 🌟 THE FIX: Tell iOS to play audio even if the physical silent switch is ON
+            do {
+                try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+                try AVAudioSession.sharedInstance().setActive(true)
+            } catch {
+                print("Failed to set audio session category: \(error)")
+            }
+            
             let urlString = "https://cdn.islamic.network/quran/audio/128/ar.alafasy/\(verse.id).mp3"
             guard let url = URL(string: urlString) else { return }
             
