@@ -46,11 +46,12 @@ struct ContentView: View {
                     VStack(spacing: 24) {
                         switch activeTab {
                         case .home:      homeView
-                        case .qibla:     qiblaPlaceholderView
+                        case .qibla:     QiblaCompassView() // 🌟 THE FIX: Point to your actual Compass!
                         case .settings:  SettingsView()
                         }
                     }
                     .padding(.bottom, 100)
+                
                 }
                 
                 floatingTabBar
@@ -214,7 +215,7 @@ extension ContentView {
                 pageCard(title: "Daily Duas", icon: "sparkles", bgColor: Color(red: 0.52, green: 0.61, blue: 0.56))
             }.buttonStyle(PlainButtonStyle())
             
-            NavigationLink(destination: Text("Bookmarks Coming Soon")) {
+            NavigationLink(destination: BookmarksView()) { // 🌟 THE FIX
                 pageCard(title: "Bookmarks", icon: "bookmark.fill", bgColor: Color(red: 0.38, green: 0.48, blue: 0.43))
             }.buttonStyle(PlainButtonStyle())
             
