@@ -2,8 +2,6 @@
 //  QiblaCompassManager.swift
 //  QuranSphere
 //
-//  Created by Khaver Javed on 16/07/2026.
-//
 
 import Foundation
 internal import CoreLocation
@@ -11,10 +9,12 @@ internal import Combine
 
 class QiblaCompassManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private var locationManager: CLLocationManager?
+    private let geocoder = CLGeocoder() // 🌟 ADDED: For reverse geocoding
     
     @Published var heading: Double = 0.0
     @Published var qiblaDirection: Double = 0.0
     @Published var authStatus: CLAuthorizationStatus = .notDetermined
+    @Published var locationName: String = "Locating..." // 🌟 ADDED: Stores the city/town name
     
     // Coordinates for the Kaaba in Makkah
     private let kaabaLatitude = 21.4225
@@ -62,6 +62,25 @@ class QiblaCompassManager: NSObject, ObservableObject, CLLocationManagerDelegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         calculateQibla(from: location)
+        
+        // 🌟 BATTERY SAVER: Only reverse geocode if we haven't found the city yet
+        if locationName == "Locating..." {
+            geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
+                guard let self = self, let placemark = placemarks?.first, error == nil else { return }
+                
+                // Extract Town/City and Country
+                let city = placemark.locality ?? placemark.subAdministrativeArea ?? "Unknown Area"
+                let country = placemark.country ?? ""
+                
+                DispatchQueue.main.async {
+                    if country.isEmpty {
+                        self.locationName = city
+                    } else {
+                        self.locationName = "\(city), \(country)"
+                    }
+                }
+            }
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {

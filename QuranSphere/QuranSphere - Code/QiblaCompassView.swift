@@ -2,8 +2,6 @@
 //  QiblaCompassView.swift
 //  QuranSphere
 //
-//  Created by Khaver Javed on 16/07/2026.
-//
 
 import SwiftUI
 internal import CoreLocation
@@ -11,17 +9,50 @@ internal import CoreLocation
 struct QiblaCompassView: View {
     @StateObject private var compassManager = QiblaCompassManager()
     @AppStorage("useLocationForQibla") private var useLocationForQibla = true
+    @AppStorage("isDarkMode") private var isDarkMode = false
+    
+    // Core App Colors
+    let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
+    let accentGold = Color(red: 0.83, green: 0.67, blue: 0.51)
+    
+    // Mathematical exactness for alignment
+    var alignmentDifference: Double {
+        var diff = abs(compassManager.qiblaDirection - compassManager.heading).truncatingRemainder(dividingBy: 360)
+        if diff > 180 { diff = 360 - diff }
+        return diff
+    }
+    
+    var isAligned: Bool {
+        return alignmentDifference < 2.0 // 2 degrees of forgiveness
+    }
     
     var body: some View {
         VStack {
             Text("Qibla Finder")
-                .font(.title2)
-                .bold()
+                .font(.system(.title2, design: .serif)).bold()
+                .foregroundColor(isDarkMode ? .white : .black)
                 .padding(.top)
             
-            Text("Align both needles to find the Kaaba")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+            Text("Rotate your phone until the Kaaba aligns with the top target.")
+                .font(.system(.subheadline, design: .serif))
+                .foregroundColor(.gray)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            
+            // Accurate Global Location Display
+            if compassManager.authStatus == .authorizedWhenInUse || compassManager.authStatus == .authorizedAlways {
+                VStack(spacing: 4) {
+                    HStack {
+                        Image(systemName: "mappin.and.ellipse")
+                            .foregroundColor(sageGreen)
+                            .font(.system(size: 14))
+                        Text(compassManager.locationName)
+                            .font(.system(.headline, design: .serif))
+                            .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
+                    }
+                }
+                .padding(.top, 16)
+            }
             
             Spacer()
             
@@ -31,36 +62,74 @@ struct QiblaCompassView: View {
                 ZStack {
                     // Outer Degree Ring
                     Circle()
-                        .stroke(Color(.systemGray4), lineWidth: 2)
-                        .frame(width: 280, height: 280)
+                        .stroke(isDarkMode ? Color.white.opacity(0.15) : Color.black.opacity(0.08), lineWidth: 2)
+                        .frame(width: 300, height: 300)
                     
-                    // North Indicator Needle
-                    Image(systemName: "triangle.fill")
-                        .resizable()
-                        .foregroundColor(.primary)
-                        .frame(width: 15, height: 25)
-                        .offset(y: -130)
-                        .rotationEffect(.init(degrees: -compassManager.heading))
+                    // Fixed Phone Forward Target (Top of the screen)
+                    VStack {
+                        Image(systemName: "chevron.up")
+                            .font(.system(size: 28, weight: .black))
+                            .foregroundColor(isAligned ? accentGold : (isDarkMode ? Color.white.opacity(0.3) : Color.gray.opacity(0.4)))
+                            .offset(y: -24)
+                        Spacer()
+                    }
+                    .frame(height: 350)
                     
-                    // Green Qibla Arrow
-                    Image(systemName: "location.north.line.fill")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .foregroundColor(.pillarsSage)
-                        .frame(width: 40, height: 160)
-                        // Align needle rotation by subtracting actual heading
-                        .rotationEffect(.init(degrees: compassManager.qiblaDirection - compassManager.heading))
+                    // North Marker (Rotates to show physical North for context)
+                    VStack {
+                        Text("N")
+                            .font(.system(.headline, design: .serif)).bold()
+                            .foregroundColor(isDarkMode ? .gray.opacity(0.6) : .gray.opacity(0.6))
+                        Spacer()
+                    }
+                    .frame(height: 250)
+                    .rotationEffect(.degrees(-compassManager.heading)) // North is always mathematically negative to heading
                     
-                    // Golden Center Target
+                    // The Rotating Kaaba & Needle
+                    VStack(spacing: 0) {
+                        // 🌟 Custom Minimalist Kaaba Icon
+                        ZStack {
+                            // Deep black core
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color(red: 0.05, green: 0.05, blue: 0.05))
+                                .frame(width: 34, height: 42)
+                                .shadow(color: isAligned ? accentGold.opacity(0.8) : Color.black.opacity(0.3), radius: isAligned ? 15 : 5)
+                            
+                            // Gold Band
+                            Rectangle()
+                                .fill(accentGold)
+                                .frame(width: 34, height: 4)
+                                .offset(y: -8)
+                        }
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 3)
+                                .stroke(accentGold.opacity(0.8), lineWidth: 1.5)
+                        )
+                        .padding(.bottom, 6)
+                        
+                        // Connecting Needle Line
+                        Rectangle()
+                            .fill(isAligned ? accentGold : sageGreen)
+                            .frame(width: 3, height: 110)
+                            .cornerRadius(1.5)
+                        
+                        Spacer()
+                    }
+                    .frame(height: 330)
+                    // The actual bearing of Qibla relative to the top of the phone
+                    .rotationEffect(.degrees(compassManager.qiblaDirection - compassManager.heading))
+                    
+                    // Center Pivot
                     Circle()
-                        .fill(Color.pillarsAccentGold)
+                        .fill(isAligned ? accentGold : sageGreen)
                         .frame(width: 14, height: 14)
+                        .overlay(
+                            Circle().stroke(isDarkMode ? Color(red: 0.10, green: 0.12, blue: 0.11) : Color(red: 0.97, green: 0.97, blue: 0.95), lineWidth: 3)
+                        )
                 }
-                .animation(.linear(duration: 0.15), value: compassManager.heading)
-                .onChange(of: compassManager.heading) { oldValue, newValue in
-                    let difference = abs((compassManager.qiblaDirection - newValue).truncatingRemainder(dividingBy: 360))
-                    // When user aligns perfectly within 2 degrees, trigger light haptic feedback
-                    if difference < 2.0 || difference > 358.0 {
+                .animation(.spring(response: 0.4, dampingFraction: 0.7), value: compassManager.heading)
+                .onChange(of: compassManager.heading) { _, _ in
+                    if isAligned {
                         triggerHapticFeedback()
                     }
                 }
@@ -68,64 +137,78 @@ struct QiblaCompassView: View {
                 Spacer()
                 
                 // Live reading coordinates
-                HStack(spacing: 40) {
-                    VStack {
+                HStack(spacing: 50) {
+                    VStack(spacing: 6) {
                         Text("Heading")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundColor(.gray)
                         Text("\(Int(compassManager.heading))°")
-                            .font(.title3)
-                            .bold()
+                            .font(.system(.title3, design: .monospaced)).bold()
+                            .foregroundColor(isDarkMode ? .white : .black)
                     }
-                    VStack {
+                    VStack(spacing: 6) {
                         Text("Qibla Angle")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundColor(.gray)
                         Text("\(Int(compassManager.qiblaDirection))°")
-                            .font(.title3)
-                            .bold()
-                            .foregroundColor(.pillarsSage)
+                            .font(.system(.title3, design: .monospaced)).bold()
+                            .foregroundColor(sageGreen)
                     }
                 }
                 .padding(.bottom, 40)
                 
             } else {
+                // Permissions UI
                 VStack(spacing: 16) {
                     Image(systemName: "location.slash.fill")
                         .font(.system(size: 48))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(.gray)
                     Text("Location Access Required")
-                        .font(.headline)
+                        .font(.system(.headline, design: .serif))
+                        .foregroundColor(isDarkMode ? .white : .black)
                     Text("We calculate the precise mathematical angle to the Kaaba using coordinates from your device's location sensor. This is done locally on your device.")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .font(.system(.subheadline, design: .serif))
+                        .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                        .padding(.horizontal, 32)
                     
                     Button("Grant Permission") {
                         compassManager.startTracking()
                     }
-                    .padding()
-                    .background(Color.pillarsSage)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+                    .background(sageGreen)
                     .foregroundColor(.white)
-                    .cornerRadius(10)
+                    .font(.system(.headline, design: .rounded))
+                    .clipShape(Capsule())
+                    .padding(.top, 12)
                 }
                 Spacer()
             }
         }
+        .frame(minHeight: 600)
         .onAppear {
             if useLocationForQibla {
                 compassManager.startTracking()
             }
         }
         .onDisappear {
-            // Pillars style battery saving execution logic: kill sensors immediately
             compassManager.stopTracking()
         }
     }
     
+    // Limits haptics so it doesn't vibrate constantly while inside the 2-degree threshold
+    @State private var hasTriggeredHaptic = false
     private func triggerHapticFeedback() {
-        let generator = UIImpactFeedbackGenerator(style: .light)
-        generator.impactOccurred()
+        if !hasTriggeredHaptic {
+            let generator = UIImpactFeedbackGenerator(style: .medium)
+            generator.impactOccurred()
+            hasTriggeredHaptic = true
+            
+            // Reset after 1 second so it can trigger again if they move away and come back
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                hasTriggeredHaptic = false
+            }
+        }
     }
 }
