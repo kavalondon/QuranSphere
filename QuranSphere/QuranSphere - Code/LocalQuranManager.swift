@@ -303,7 +303,7 @@ class LocalQuranManager: ObservableObject {
     private func loadQuranData() async {
         do {
             let (newChapters, newVerses) = try await Task.detached {
-                try QuranDataParser.parseData()
+                try await QuranDataParser.parseData()
             }.value
             
             await MainActor.run {

@@ -1,6 +1,9 @@
 import SwiftUI
 
 struct SurahListView: View {
+    // 🌟 ADDED: This catches the flag from the Home Screen
+    var showFavoritesOnly: Bool = false
+    
     @EnvironmentObject var quranManager: LocalQuranManager
     
     // Bring in the Dark Mode setting
@@ -62,10 +65,16 @@ struct SurahListView: View {
             .listStyle(.plain)
             .background(bgColor)
         }
-        .navigationTitle("The Holy Quran")
+        // 🌟 UPDATED: Dynamic title based on where they clicked from
+        .navigationTitle(showFavoritesOnly ? "Favourite Surahs" : "The Holy Quran")
         .navigationBarTitleDisplayMode(.inline)
-        // 🌟 Magic fix: Links the system UI to your custom toggle!
         .preferredColorScheme(isDarkMode ? .dark : .light)
+        // 🌟 ADDED: Automatically snaps the filter to favorites if needed
+        .onAppear {
+            if showFavoritesOnly {
+                selectedFilter = .favorites
+            }
+        }
     }
     
     private func filterButton(title: String, filter: SurahFilter) -> some View {

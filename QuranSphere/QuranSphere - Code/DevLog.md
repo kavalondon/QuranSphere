@@ -109,3 +109,118 @@ Technical Challenges & Solved Errors
 •    Fix: Bypassed the computed property setter and updated the underlying @AppStorage string directly (favoriteSurahIDsStr = current.map...), allowing SwiftUI's built-in property wrappers to handle the state change safely without requiring mutating methods.
 3.    Missing Type in Scope Compilation Errors: The build system failed with a cascade of cryptic errors (Generic parameter 'C' could not be inferred, Cannot infer key path type from context, and Cannot find type 'SurahMetadataModel' in scope) when the view attempted to iterate over the Surah list.
 •    Fix: Identified that the static 114-Surah metadata payload had been accidentally truncated from the bottom of the file during a previous copy-paste. Restored the full SurahMetadataModel struct, instantly resolving the compiler's generic inference and scoping failures.
+
+----
+
+📅 July 20, 2026
+Today's Milestones
+•    Qibla Compass Engine & Reverse Geocoding: Engineered a custom Qibla compass utilizing CoreLocation and spherical trigonometry to calculate exact bearings to the Kaaba completely offline. Integrated a lightweight CLGeocoder to efficiently translate raw GPS coordinates into localized city and country displays while preserving device battery life.
+•    Bookmarks Hub Integration: Developed a dedicated BookmarksView that seamlessly decodes comma-separated verse IDs from @AppStorage. Built an elegant preview card UI that parses the embedded JSON database to render saved verses and instantly route users back to their exact reading position in the QuranReaderView.
+•    Hardware Audio Bypass: Confirmed the Islamic Network CDN streaming infrastructure is 100% free and fair-use, and successfully restructured the AVPlayer implementation to bypass iOS hardware constraints for seamless, high-quality audio streaming.
+Technical Challenges & Solved Errors
+    1.    Blank ScrollView Collapse: The QiblaCompassView rendered as a completely blank screen because it utilized flexible Spacer() elements within the parent ContentView's infinite vertical ScrollView, which squished the layout to exactly zero pixels.
+•    Fix: Applied a strict .frame(minHeight: 600) modifier to the compass container, forcing it to occupy its required vertical space and preventing the parent scroll view from crushing the UI elements.
+    2.    Dual-Needle Alignment Confusion: The initial compass design utilized separate needles for North and Qibla, creating a mathematically confusing UX where users attempted to align two disparate rotational values.
+•    Fix: Overhauled the layout to feature a fixed "Forward" chevron at the top of the screen. Bound the mathematical Qibla bearing directly to a geometric Kaaba icon, allowing users to intuitively rotate their physical device until the Kaaba aligned perfectly with the top marker, confirmed via a custom haptic lock.
+    3.    Hardware Silent Switch Muting: AVPlayer executed successfully with no errors, but physical devices output zero sound. iOS was aggressively muting the audio stream because the physical hardware ringer switch was toggled to silent.
+•    Fix: Implemented an explicit AVAudioSession override, setting the audio category to .playback and activating the session prior to stream initialization. This signaled to the OS that the stream was essential user-requested media, forcing playback out loud regardless of the physical ringer state.
+
+
+---
+
+# 🚀 Devlog: July 22, 2026 - Thematic Search & Settings Architecture
+
+## 🌟 Overview
+Today's focus was on heavily refining the user experience on the Home Screen. We overhauled the mood search engine to be much more empathetic and context-aware, introduced the foundation for the Gamification Dashboard, and completely decoupled the Home Screen typography settings from the main Quran Reader settings.
+
+## 🛠 Features & Updates
+
+### 1. Empathetic "Mood Search" Engine (`QuranSearchManager`)
+*   **Thematic Interception Map:** Upgraded the search engine to intercept emotional keywords (e.g., "lonely", "angry", "anxious") and route users to curated, comforting verses rather than relying on raw text matching.
+*   **Pooled Randomization:** Expanded the thematic arrays significantly. The engine now pools all relevant verses for a mood and selects one randomly, ensuring the user doesn't see the same verse repeatedly.
+*   **Curated Safety Blocklist:** Implemented a robust `isSafe` filter to silently block explicit or inappropriate search queries. Carefully curated the list to ensure legitimate Quranic topics (e.g., "death", "angel of death") are still searchable.
+
+### 2. Dashboard Gamification UI
+*   **Continue Reading:** Added a dynamic "Continue Reading" section on the Home Screen that pulls from `@AppStorage` to display the last read Surah and Verse.
+*   **Stats Overview:** Built the UI shell for the Gamification stats, including Current Streak, Daily Verses goal, and the Hasanat counter.
+
+### 3. Decoupled Typography Settings (`MoodCardSettingsView`)
+*   **Independent AppStorage:** Created distinct `@AppStorage` variables (`moodArabicFont`, `moodArabicFontSize`, `moodScriptStyle`) so users can adjust their Home Screen cards without altering their main reading experience.
+*   **Live Preview Interface:** Built a dedicated `MoodCardSettingsView` featuring a live, reactive preview card that updates instantly as users adjust sliders and pickers.
+*   **Settings Integration:** Integrated the new settings page into the main `SettingsView` using a native iOS card design. Resolved a notorious SwiftUI `NavigationLink` nesting bug to ensure buttery-smooth routing.
+
+## 🧠 Technical Learnings
+*   **SwiftUI Routing:** Discovered that nesting a `NavigationLink` inside a `ScrollView` that is already inside a parent `ScrollView` causes Apple's gesture recognizer to swallow the tap. Flattening the view hierarchy resolves the `EXC_BAD_ACCESS` crashes and tap issues perfectly.
+
+
+----
+
+# 🚀 Devlog: July 22, 2026 - Gamification Engine & Robust Search Safety
+
+## 🌟 Overview
+Today's focus was on bringing the app to life by implementing the core mathematics for the gamification system, building a native Islamic calendar integration, and heavily fortifying the thematic search engine against abuse. We also squashed several SwiftUI routing bugs to ensure buttery-smooth navigation.
+
+## 🛠 Features & Updates
+
+### 1. The Hasanat & Gamification Engine (`GamificationManager`)
+*   **Hasanat Math Engine:** Built a lightweight logic manager that intercepts raw Arabic text, strips non-letter characters (spaces), and awards 10 *hasanat* (good deeds) per letter read, strictly following the Sunnah.
+*   **Ramadan Multiplier:** Integrated Apple's native `.islamicUmmAlQura` calendar. The engine automatically detects the 9th Islamic month (Ramadan) and dynamically applies a 70x multiplier (700 hasanat per letter).
+*   **Daily Streaks:** Built an automatic date-checking system using `UserDefaults` that compares the current date to the `lastReadDate`, gracefully incrementing the streak or resetting daily goals to 0 at midnight.
+*   **Reader Integration:** Wired the manager into `QuranReaderView`, utilizing SwiftUI's `.onAppear` and `.id()` modifiers to invisibly track reading progress as the user pages through verses.
+
+### 2. Search Safety & Hard-Blocking (`QuranSearchManager`)
+*   **Comprehensive Blocklist:** Massively expanded the explicit filter to include modern internet slang, profanity, and explicit terminology, while preserving clinical/theological terms necessary for legitimate Quranic study.
+*   **Punctuation Stripping:** Closed a loophole where users could bypass the filter using punctuation (e.g., "word!"). 
+*   **Hard-Block UI:** Replaced the silent redirect with a "Hard Block" mechanism. If a banned word is detected, the search engine instantly aborts, clears the query, and wipes the ghost results from the screen to provide clear, rigid feedback.
+
+### 3. Navigation & Filtering Fixes
+*   **Favourite Surahs Routing:** Updated `ContentView` Quick Links to pass a boolean flag to `SurahListView`. The list now automatically snaps to the "Favourites" filter pill and dynamically updates the Navigation Title when accessed via the Quick Link.
+*   **Settings Routing:** Resolved a notoriously tricky SwiftUI bug where nested `ScrollViews` swallowed `NavigationLink` taps, ensuring the new Mood Settings card taps instantly.
+
+## 🧠 Technical Learnings
+*   **Swift Native Capabilities:** Leveraging Swift's built-in `CharacterSet.punctuationCharacters` and the native Islamic Calendar (`.islamicUmmAlQura`) removes the need for clunky regex or third-party APIs, keeping the app incredibly fast and lightweight.
+
+---
+
+# Devlog: UI Polish & Native Launch Screen
+**Date:** July 26, 2026
+
+## 🎯 Summary
+Focused on improving the user experience of the Tahajjud Guide by streamlining the content, integrating custom photography, and building a lightning-fast, native launch screen from scratch.
+
+## 🎨 UI & UX Improvements
+* **Tahajjud Guide Refactor:** Simplified the text content for better scannability while preserving essential Hadith and Quranic references.
+* **Custom Asset Integration:** Replaced generic SF Symbols with custom, step-by-step photography (`salah-step-01` through `salah-step-09`) to visually guide users through the prayer.
+* **Image Sizing Fixes:** Updated the SwiftUI card layout to dynamically scale images within a constrained container, utilizing `.clipShape` to keep the rounded corners clean.
+
+## ⚙️ Technical Highlights
+* **Native Launch Screen Implementation:** Bypassed artificial loading screens and older storyboard methods. Implemented a purely native launch screen using the `UILaunchScreen` dictionary in Xcode's Info tab for instantaneous loading.
+* **Dynamic Theming:** Configured the launch screen background to adapt automatically to user settings (Sage Green for Light Mode, Dark Slate for Dark Mode).
+* **Asset Resolution Scaling:** Utilized Xcode's 2x/3x scaling slots to ensure the central launch logo renders at the perfect size and maximum sharpness across all iPhone screens.
+* **Overcoming Simulator Caching:** Successfully troubleshooted and bypassed iOS's aggressive launch screen caching through strategic asset renaming and raw key configuration.
+
+
+-----
+
+# Devlog: UI Polish, Native Launch Screen & New Guides Section
+**Date:** July 26, 2026
+
+## 🎯 Summary
+Focused on improving the user experience by building a lightning-fast native launch screen and expanding the app's educational content. Introduced a brand-new Guides & Learning hub designed to be accessible and straightforward for beginners.
+
+## 📚 Guides & Learning Hub
+* **New Section Created:** Added a dedicated learning section offering guides on "How to Pray", "Tahajjud", "Dhikr", and "How to Make Dua".
+* **New Card Layout:** Implemented a clean, elegant card-based menu system to help users navigate educational topics effortlessly.
+* **The Complete Prayer Guide:** Built a comprehensive breakdown for Salah, specifically keeping information simple and to the point for beginners or those needing a refresher. 
+* **Guide Categories:** The prayer guide includes structured sub-sections: Introduction to Salah, Prayer Times & Rak'ahs, Purification (Wudu'), How to Perform Salah, and Short Qur'anic Chapters.
+
+## 🎨 UI & UX Improvements
+* **Tahajjud Guide Refactor:** Simplified the text content for better scannability while preserving essential Hadith and Quranic references.
+* **Custom Asset Integration:** Replaced generic SF Symbols with custom, step-by-step photography to visually guide users through the prayer.
+* **Image Sizing Fixes:** Updated the SwiftUI card layout to dynamically scale images within a constrained container, utilizing `.clipShape` to keep the rounded corners clean.
+
+## ⚙️ Technical Highlights
+* **Native Launch Screen Implementation:** Bypassed artificial loading screens. Implemented a purely native launch screen using the `UILaunchScreen` dictionary in Xcode's Info tab for instantaneous loading.
+* **Dynamic Theming:** Configured the launch screen background to adapt automatically to user settings (Sage Green for Light Mode, Dark Slate for Dark Mode).
+* **Asset Resolution Scaling:** Utilized Xcode's 2x/3x scaling slots to ensure the central launch logo renders at the perfect size and maximum sharpness across all iPhone screens.
+* **Overcoming Simulator Caching:** Successfully troubleshooted and bypassed iOS's aggressive launch screen caching through strategic asset renaming and raw key configuration.

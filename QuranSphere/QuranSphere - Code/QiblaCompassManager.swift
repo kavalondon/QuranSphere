@@ -6,15 +6,16 @@
 import Foundation
 internal import CoreLocation
 internal import Combine
+import MapKit // 🌟 ADDED: Required for iOS 26.0+ Geocoding
 
 class QiblaCompassManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private var locationManager: CLLocationManager?
-    private let geocoder = CLGeocoder() // 🌟 ADDED: For reverse geocoding
     
     @Published var heading: Double = 0.0
     @Published var qiblaDirection: Double = 0.0
     @Published var authStatus: CLAuthorizationStatus = .notDetermined
-    @Published var locationName: String = "Locating..." // 🌟 ADDED: Stores the city/town name
+    @Published var locationName: String = "Locating..."
+    @Published var lastLocation: CLLocation?
     
     // Coordinates for the Kaaba in Makkah
     private let kaabaLatitude = 21.4225
@@ -24,13 +25,13 @@ class QiblaCompassManager: NSObject, ObservableObject, CLLocationManagerDelegate
         super.init()
     }
     
-    // Start services only when entering the Qibla screen to protect the battery
     func startTracking() {
         if locationManager == nil {
             let manager = CLLocationManager()
             manager.delegate = self
-            manager.desiredAccuracy = kCLLocationAccuracyThreeKilometers // Low accuracy to preserve battery
-            manager.headingFilter = 1.0 // Filter out minor movements
+            // LOW POWER: 3km accuracy is perfect. It gives the same Qibla angle globally.
+            manager.desiredAccuracy = kCLLocationAccuracyThreeKilometers
+            manager.headingFilter = 1.0
             self.locationManager = manager
         }
         
@@ -44,7 +45,6 @@ class QiblaCompassManager: NSObject, ObservableObject, CLLocationManagerDelegate
         }
     }
     
-    // Completely shut down GPS and Gyro sensors to eliminate background battery drain
     func stopTracking() {
         locationManager?.stopUpdatingLocation()
         locationManager?.stopUpdatingHeading()
@@ -61,14 +61,27 @@ class QiblaCompassManager: NSObject, ObservableObject, CLLocationManagerDelegate
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
+        
+        // 🌟 ADDED: Save the location so the PrayerTimesManager can use it
+        self.lastLocation = location
+        
         calculateQibla(from: location)
         
-        // 🌟 BATTERY SAVER: Only reverse geocode if we haven't found the city yet
+        // EXTREME BATTERY SAVER: Shut down the GPS antenna immediately after getting a lock.
+        manager.stopUpdatingLocation()
+        
+        // 🌟 UPDATED: MapKit implementation for iOS 26.0+
         if locationName == "Locating..." {
-            geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
-                guard let self = self, let placemark = placemarks?.first, error == nil else { return }
+            // Initiate the modern MapKit geocoding request
+            guard let request = MKReverseGeocodingRequest(location: location) else { return }
+            
+            request.getMapItems { [weak self] items, error in
+                guard let self = self, let mapItem = items?.first, error == nil else { return }
                 
-                // Extract Town/City and Country
+                // Extract MapKit's placemark from the map item
+                let placemark = mapItem.placemark
+                
+                // Extract Town/City and Country natively
                 let city = placemark.locality ?? placemark.subAdministrativeArea ?? "Unknown Area"
                 let country = placemark.country ?? ""
                 

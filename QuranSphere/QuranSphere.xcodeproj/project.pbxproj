@@ -7,6 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5E14952E300D9F02003D68DC /* QiblaPrayerTimesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E14952D300D9EFF003D68DC /* QiblaPrayerTimesView.swift */; };
+		5E149530300DA47A003D68DC /* BookmarksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E14952F300DA478003D68DC /* BookmarksView.swift */; };
+		5E149532300F0048003D68DC /* MoodCardSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E149531300F0040003D68DC /* MoodCardSettingsView.swift */; };
+		5E1495343010EF98003D68DC /* GamificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1495333010EF95003D68DC /* GamificationManager.swift */; };
+		5E14953630123238003D68DC /* GuidesSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E14953530123236003D68DC /* GuidesSectionView.swift */; };
+		5E14953830123351003D68DC /* TahajjudGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1495373012334F003D68DC /* TahajjudGuideView.swift */; };
+		5E14953A30127395003D68DC /* PrayerGuideListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E14953930127393003D68DC /* PrayerGuideListView.swift */; };
+		5E14953C30127515003D68DC /* WuduGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E14953B30127512003D68DC /* WuduGuideView.swift */; };
+		5E14953E301283FE003D68DC /* SalahStepsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E14953D301283FB003D68DC /* SalahStepsView.swift */; };
 		5E854D92300C55AA00E627E6 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E854D83300C55AA00E627E6 /* ContentView.swift */; };
 		5E854D93300C55AA00E627E6 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E854D90300C55AA00E627E6 /* SettingsView.swift */; };
 		5E854D94300C55AA00E627E6 /* QiblaView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E854D8A300C55AA00E627E6 /* QiblaView.swift */; };
@@ -31,6 +40,8 @@
 		5E854DAD300CECD200E627E6 /* AmiriQuran-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5E854DAB300CECD200E627E6 /* AmiriQuran-Regular.ttf */; };
 		5E854DAF300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5E854DAE300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf */; };
 		5E854DB0300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5E854DAE300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf */; };
+		5ECB339B30234C0400E195A1 /* PrayerTimesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECB339930234B0600E195A1 /* PrayerTimesView.swift */; };
+		5ECB339C30234C8F00E195A1 /* PrayerTimesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECB33953023492B00E195A1 /* PrayerTimesManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,6 +62,15 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		5E14952D300D9EFF003D68DC /* QiblaPrayerTimesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QiblaPrayerTimesView.swift; sourceTree = "<group>"; };
+		5E14952F300DA478003D68DC /* BookmarksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksView.swift; sourceTree = "<group>"; };
+		5E149531300F0040003D68DC /* MoodCardSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodCardSettingsView.swift; sourceTree = "<group>"; };
+		5E1495333010EF95003D68DC /* GamificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamificationManager.swift; sourceTree = "<group>"; };
+		5E14953530123236003D68DC /* GuidesSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GuidesSectionView.swift; sourceTree = "<group>"; };
+		5E1495373012334F003D68DC /* TahajjudGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TahajjudGuideView.swift; sourceTree = "<group>"; };
+		5E14953930127393003D68DC /* PrayerGuideListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerGuideListView.swift; sourceTree = "<group>"; };
+		5E14953B30127512003D68DC /* WuduGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WuduGuideView.swift; sourceTree = "<group>"; };
+		5E14953D301283FB003D68DC /* SalahStepsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SalahStepsView.swift; sourceTree = "<group>"; };
 		5E2BDBB53007EB5C007BD194 /* QuranSphereApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuranSphereApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E2BDBC23007EB63007BD194 /* QuranSphereTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuranSphereTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E2BDBCC3007EB63007BD194 /* QuranSphereUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = QuranSphereUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -77,6 +97,8 @@
 		5E854DAB300CECD200E627E6 /* AmiriQuran-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "AmiriQuran-Regular.ttf"; sourceTree = "<group>"; };
 		5E854DAE300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "KFGQPC Uthman Taha Naskh Regular.ttf"; sourceTree = "<group>"; };
 		5E854DB2300CEEF400E627E6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = Info.plist; path = QuranSphere/Info.plist; sourceTree = "<group>"; };
+		5ECB33953023492B00E195A1 /* PrayerTimesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerTimesManager.swift; sourceTree = "<group>"; };
+		5ECB339930234B0600E195A1 /* PrayerTimesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerTimesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -142,6 +164,17 @@
 		5E854DA5300C564F00E627E6 /* QuranSphere - Code */ = {
 			isa = PBXGroup;
 			children = (
+				5ECB339930234B0600E195A1 /* PrayerTimesView.swift */,
+				5ECB33953023492B00E195A1 /* PrayerTimesManager.swift */,
+				5E14953D301283FB003D68DC /* SalahStepsView.swift */,
+				5E14953B30127512003D68DC /* WuduGuideView.swift */,
+				5E14953930127393003D68DC /* PrayerGuideListView.swift */,
+				5E1495373012334F003D68DC /* TahajjudGuideView.swift */,
+				5E14953530123236003D68DC /* GuidesSectionView.swift */,
+				5E1495333010EF95003D68DC /* GamificationManager.swift */,
+				5E149531300F0040003D68DC /* MoodCardSettingsView.swift */,
+				5E14952F300DA478003D68DC /* BookmarksView.swift */,
+				5E14952D300D9EFF003D68DC /* QiblaPrayerTimesView.swift */,
 				5E854DB1300CEDF800E627E6 /* Fonts */,
 				5E854D80300C55AA00E627E6 /* AppSettingsView.swift */,
 				5E854D81300C55AA00E627E6 /* Assets.xcassets */,
@@ -331,15 +364,26 @@
 				5E854D92300C55AA00E627E6 /* ContentView.swift in Sources */,
 				5E854D93300C55AA00E627E6 /* SettingsView.swift in Sources */,
 				5E854D94300C55AA00E627E6 /* QiblaView.swift in Sources */,
+				5ECB339C30234C8F00E195A1 /* PrayerTimesManager.swift in Sources */,
+				5E14953630123238003D68DC /* GuidesSectionView.swift in Sources */,
 				5E854D95300C55AA00E627E6 /* LocalQuranManager.swift in Sources */,
 				5E854D96300C55AA00E627E6 /* QiblaCompassManager.swift in Sources */,
 				5E854D97300C55AA00E627E6 /* QiblaCompassView.swift in Sources */,
+				5E14952E300D9F02003D68DC /* QiblaPrayerTimesView.swift in Sources */,
 				5E854D98300C55AA00E627E6 /* AppSettingsView.swift in Sources */,
+				5E14953C30127515003D68DC /* WuduGuideView.swift in Sources */,
+				5E14953830123351003D68DC /* TahajjudGuideView.swift in Sources */,
 				5E854D99300C55AA00E627E6 /* Color+Palette.swift in Sources */,
+				5E14953E301283FE003D68DC /* SalahStepsView.swift in Sources */,
 				5E854D9A300C55AA00E627E6 /* SurahListView.swift in Sources */,
+				5E149532300F0048003D68DC /* MoodCardSettingsView.swift in Sources */,
+				5E1495343010EF98003D68DC /* GamificationManager.swift in Sources */,
 				5E854D9B300C55AA00E627E6 /* QuranSphereApp.swift in Sources */,
+				5ECB339B30234C0400E195A1 /* PrayerTimesView.swift in Sources */,
 				5E854D9C300C55AA00E627E6 /* QiblaManager.swift in Sources */,
+				5E14953A30127395003D68DC /* PrayerGuideListView.swift in Sources */,
 				5E854D9D300C55AA00E627E6 /* MoodBannerView.swift in Sources */,
+				5E149530300DA47A003D68DC /* BookmarksView.swift in Sources */,
 				5E854D9E300C55AA00E627E6 /* QuranReaderView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -507,9 +551,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuranSphere/Info.plist;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "QuranSphere needs your location to accurately calculate prayer times and the Qibla direction";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -546,9 +590,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuranSphere/Info.plist;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "QuranSphere needs your location to accurately calculate prayer times and the Qibla direction";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (

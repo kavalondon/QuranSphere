@@ -1,6 +1,6 @@
 import SwiftUI
 
-// MARK: - App Navigation Tab Model
+// MARK: - Models
 enum Tab {
     case home
     case qibla
@@ -17,11 +17,28 @@ struct ContentView: View {
     @AppStorage("lastReadVerse") private var lastReadVerse = 1
     @AppStorage("readingProgress") private var readingProgress: Double = 0.0
     
+    // Reader Settings
+    @AppStorage("arabicFont") private var arabicFont: String = "Amiri"
+    @AppStorage("arabicFontSize") private var arabicFontSize: Double = 28.0
+    @AppStorage("scriptStyle") private var scriptStyle: String = "Uthmani"
+    
+    // Dedicated Mood Card Storage
+    @AppStorage("moodArabicFont") private var moodArabicFont: String = "Amiri"
+    @AppStorage("moodArabicFontSize") private var moodArabicFontSize: Double = 24.0
+    @AppStorage("moodScriptStyle") private var moodScriptStyle: String = "Uthmani"
+    
+    // Gamification Storage
+    @AppStorage("currentStreak") private var currentStreak: Int = 0
+    @AppStorage("versesReadToday") private var versesReadToday: Int = 0
+    @AppStorage("dailyVerseGoal") private var dailyVerseGoal: Int = 5
+    @AppStorage("totalHasanat") private var totalHasanat: Int = 0
+    
     // MARK: - State
     @State private var activeTab: Tab = .home
-    @State private var searchText: String = ""
     @State private var selectedMood: String = ""
     @State private var currentComfortVerse: JSONVerse? = nil
+    
+    @State private var searchClearTrigger: Int = 0
     
     let moods = [
         ("🥺 Anxious", "anxious"),
@@ -46,12 +63,11 @@ struct ContentView: View {
                     VStack(spacing: 24) {
                         switch activeTab {
                         case .home:      homeView
-                        case .qibla:     QiblaCompassView() // 🌟 THE FIX: Point to your actual Compass!
+                        case .qibla:     QiblaCompassView()
                         case .settings:  SettingsView()
                         }
                     }
                     .padding(.bottom, 100)
-                
                 }
                 
                 floatingTabBar
@@ -62,6 +78,11 @@ struct ContentView: View {
             .toolbar { themeToggle }
         }
         .preferredColorScheme(isDarkMode ? .dark : .light)
+        .onAppear {
+            DispatchQueue.global(qos: .background).async {
+                let _ = quranManager.verses.count
+            }
+        }
     }
 }
 
@@ -73,8 +94,9 @@ extension ContentView {
             moodAndSearchSection
                 .padding(.top, 16)
             comfortVerseSection
-            continueReadingCard
+            progressDashboard
             quickLinksGrid
+            GuidesSectionView() // 🌟 Cleanly calling your separated component file
         }
     }
     
@@ -91,7 +113,7 @@ extension ContentView {
                     Spacer().frame(width: 16)
                     ForEach(moods, id: \.1) { label, key in
                         Button(action: {
-                            searchText = ""
+                            searchClearTrigger += 1
                             selectedMood = key
                             triggerFastSearch(for: key)
                         }) {
@@ -112,27 +134,14 @@ extension ContentView {
                 }
             }
             
-            // Search Bar
-            HStack {
-                Image(systemName: "magnifyingglass").foregroundColor(.gray)
-                TextField("Search verses, topics...", text: $searchText)
-                    .font(.system(.body, design: .serif))
-                    .submitLabel(.search)
-                    .onSubmit {
-                        let query = searchText
-                        searchText = ""
-                        selectedMood = ""
-                        triggerFastSearch(for: query)
-                    }
+            IsolatedSearchBar(clearTrigger: $searchClearTrigger, isDarkMode: isDarkMode) { query in
+                selectedMood = ""
+                triggerFastSearch(for: query)
             }
-            .padding(16)
-            .background(isDarkMode ? Color.white.opacity(0.08) : Color.white)
-            .cornerRadius(14)
-            .padding(.horizontal, 24)
         }
     }
     
-    // 2. Comfort Verse Result (Directly embedded safely with full unclipped layout)
+    // 2. Comfort Verse Result
     @ViewBuilder
     private var comfortVerseSection: some View {
         if let verse = currentComfortVerse {
@@ -146,17 +155,20 @@ extension ContentView {
                         let target = selectedMood.isEmpty ? "peace" : selectedMood
                         triggerFastSearch(for: target)
                     }) {
-                        Image(systemName: "arrow.clockwise").foregroundColor(.gray)
+                        Image(systemName: "arrow.clockwise")
+                            .foregroundColor(.gray)
+                            .padding(8)
+                            .contentShape(Rectangle())
                     }
                 }
                 
-                // Unclamped text container for Arabic text ensuring complete display without truncation
                 Text(verse.text)
-                    .font(.system(.title3, design: .serif))
+                    .font(.custom(moodArabicFont, size: moodArabicFontSize))
+                    .lineSpacing(10)
                     .multilineTextAlignment(.trailing)
                     .frame(maxWidth: .infinity, alignment: .trailing)
+                    .fixedSize(horizontal: false, vertical: true)
                 
-                // Unclamped text container for English translation ensuring complete viewability
                 Text(cleanTranslation(verse.translation))
                     .font(.system(.body, design: .serif))
                     .foregroundColor(isDarkMode ? .white.opacity(0.7) : .gray)
@@ -167,47 +179,81 @@ extension ContentView {
         }
     }
     
-    private var continueReadingCard: some View {
-        NavigationLink(destination: QuranReaderView(surahNumber: lastReadSurah, surahName: lastReadSurahName)) {
-            VStack(alignment: .leading, spacing: 16) {
+    // 3. Gamification Dashboard
+    private var progressDashboard: some View {
+        VStack(spacing: 0) {
+            NavigationLink(destination: QuranReaderView(surahNumber: lastReadSurah, surahName: lastReadSurahName)) {
                 HStack {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Continue Reading")
-                            .font(.system(.title2, design: .serif)).bold()
+                            .font(.system(.title3, design: .serif)).bold()
                             .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
                         Text("\(lastReadSurahName) • Verse \(lastReadVerse)")
                             .font(.system(.subheadline, design: .serif))
                             .foregroundColor(.gray)
                     }
                     Spacer()
-                    Image(systemName: "book.closed.fill")
-                        .font(.title2)
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 32))
                         .foregroundColor(Color(red: 0.38, green: 0.48, blue: 0.43))
                 }
-                
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text("Overall Progress")
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundColor(.gray)
-                        Spacer()
-                        Text("\(Int(readingProgress * 100))%")
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundColor(.gray)
+                .padding(20)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(PlainButtonStyle())
+            
+            Divider().padding(.horizontal, 20)
+            
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .foregroundColor(currentStreak > 0 ? Color.orange : .gray.opacity(0.3))
+                        Text("\(currentStreak) \(currentStreak == 1 ? "Day" : "Days")")
+                            .font(.system(.subheadline, design: .rounded)).bold()
                     }
-                    ProgressView(value: readingProgress)
-                        .progressViewStyle(LinearProgressViewStyle(tint: Color(red: 0.55, green: 0.55, blue: 0.52)))
+                    Text("Current Streak")
+                        .font(.system(size: 11))
+                        .foregroundColor(.gray)
+                }
+                Spacer()
+                VStack(alignment: .center, spacing: 4) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "star.fill")
+                            .foregroundColor(versesReadToday >= dailyVerseGoal ? Color.yellow : .gray.opacity(0.3))
+                        Text("\(versesReadToday)/\(dailyVerseGoal)")
+                            .font(.system(.subheadline, design: .rounded)).bold()
+                    }
+                    Text("Daily Verses")
+                        .font(.system(size: 11))
+                        .foregroundColor(.gray)
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: 4) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .foregroundColor(Color(red: 0.83, green: 0.67, blue: 0.51))
+                        Text("\(totalHasanat.formatted())")
+                            .font(.system(.subheadline, design: .rounded)).bold()
+                    }
+                    Text("Hasanat Today")
+                        .font(.system(size: 11))
+                        .foregroundColor(.gray)
                 }
             }
-            .minimalCardStyle(isDarkMode: isDarkMode)
+            .padding(20)
+            .background(isDarkMode ? Color.white.opacity(0.02) : Color(red: 0.98, green: 0.98, blue: 0.96))
         }
-        .buttonStyle(PlainButtonStyle())
+        .background(isDarkMode ? Color.white.opacity(0.06) : Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
         .padding(.horizontal, 24)
     }
     
+    // 4. Quick Links
     private var quickLinksGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
-            NavigationLink(destination: SurahListView()) {
+            NavigationLink(destination: SurahListView(showFavoritesOnly: false)) {
                 pageCard(title: "The Holy Quran", icon: "book.fill", bgColor: Color(red: 0.38, green: 0.48, blue: 0.43))
             }.buttonStyle(PlainButtonStyle())
             
@@ -215,11 +261,11 @@ extension ContentView {
                 pageCard(title: "Daily Duas", icon: "sparkles", bgColor: Color(red: 0.52, green: 0.61, blue: 0.56))
             }.buttonStyle(PlainButtonStyle())
             
-            NavigationLink(destination: BookmarksView()) { // 🌟 THE FIX
+            NavigationLink(destination: BookmarksView()) {
                 pageCard(title: "Bookmarks", icon: "bookmark.fill", bgColor: Color(red: 0.38, green: 0.48, blue: 0.43))
             }.buttonStyle(PlainButtonStyle())
             
-            NavigationLink(destination: SurahListView()) {
+            NavigationLink(destination: SurahListView(showFavoritesOnly: true)) {
                 pageCard(title: "Favourite Surahs", icon: "star.fill", bgColor: Color(red: 0.83, green: 0.67, blue: 0.51))
             }.buttonStyle(PlainButtonStyle())
         }
@@ -242,17 +288,20 @@ extension ContentView {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(minHeight: 110, maxHeight: 110)
+        .contentShape(Rectangle())
         .background(bgColor)
         .cornerRadius(16)
     }
     
     private var themeToggle: some View {
         Button(action: {
-            withAnimation(.easeInOut(duration: 0.3)) { isDarkMode.toggle() }
+            isDarkMode.toggle()
         }) {
             Image(systemName: isDarkMode ? "moon.stars.fill" : "sun.max.fill")
                 .foregroundColor(isDarkMode ? .yellow : .orange)
                 .font(.system(size: 16, weight: .semibold))
+                .padding(8)
+                .contentShape(Rectangle())
         }
     }
     
@@ -284,32 +333,24 @@ extension ContentView {
                     .foregroundColor(activeTab == tab ? Color(red: 0.38, green: 0.48, blue: 0.43) : .gray)
             }
             .frame(width: 60)
+            .contentShape(Rectangle())
         }
     }
     
-    private var qiblaPlaceholderView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "safari")
-                .font(.system(size: 50))
-                .foregroundColor(Color(red: 0.38, green: 0.48, blue: 0.43))
-            Text("Qibla Compass")
-                .font(.system(.title2, design: .serif))
-            Text("Direction-finding sensor tools coming soon.")
-                .font(.system(.subheadline, design: .serif))
-                .foregroundColor(.gray)
-        }
-        .padding(.top, 100)
-    }
-    
-    // MARK: - Reliable Direct Match Search Logic
     private func triggerFastSearch(for term: String) {
         let cleanTerm = term.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanTerm.isEmpty else { return }
-        guard QuranSearchManager.isSafe(cleanTerm) else { return }
         
-        let allVerses = quranManager.verses
+        guard QuranSearchManager.isSafe(cleanTerm) else {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                currentComfortVerse = nil
+                searchClearTrigger += 1
+            }
+            return
+        }
         
         DispatchQueue.global(qos: .userInitiated).async {
+            let allVerses = quranManager.verses
             let selectedVerse = QuranSearchManager.findBestVerse(for: cleanTerm, from: allVerses)
             
             DispatchQueue.main.async {
@@ -338,23 +379,93 @@ extension View {
     }
 }
 
-// MARK: - Robust Search & Thematic Manager
+struct IsolatedSearchBar: View {
+    @State private var localText: String = ""
+    @Binding var clearTrigger: Int
+    var isDarkMode: Bool
+    var onSubmit: (String) -> Void
+    
+    var body: some View {
+        HStack {
+            Image(systemName: "magnifyingglass").foregroundColor(.gray)
+            TextField("Search verses, topics...", text: $localText)
+                .font(.system(.body, design: .serif))
+                .submitLabel(.search)
+                .onSubmit {
+                    let query = localText
+                    localText = ""
+                    onSubmit(query)
+                }
+        }
+        .padding(16)
+        .background(isDarkMode ? Color.white.opacity(0.08) : Color.white)
+        .cornerRadius(14)
+        .padding(.horizontal, 24)
+        .onChange(of: clearTrigger) { oldValue, newValue in
+            localText = ""
+        }
+    }
+}
+
+// MARK: - Robust Search, Filter & Thematic Manager
 struct QuranSearchManager {
     static let thematicVerses: [String: [(surah: Int, verse: Int)]] = [
-        "anxious": [(13, 28), (2, 152), (9, 40), (94, 5), (94, 6)],
-        "sad": [(12, 87), (3, 139), (94, 5), (2, 155)],
-        "stressed": [(94, 6), (2, 286), (65, 3), (13, 28)],
-        "grateful": [(14, 7), (2, 152), (55, 13), (31, 12)],
-        "peace": [(13, 28), (48, 4), (2, 45)],
-        "hope": [(39, 53), (94, 5), (12, 87)]
+        "anxious": [(13, 28), (2, 152), (9, 40), (94, 5), (94, 6), (8, 30), (20, 46), (3, 173), (65, 3), (2, 286)],
+        "worry": [(13, 28), (3, 173), (20, 46), (9, 40), (65, 3)],
+        "fear": [(2, 38), (3, 175), (20, 46), (10, 62)],
+        "sad": [(12, 87), (3, 139), (94, 5), (2, 155), (9, 40), (2, 25), (2, 214), (21, 88), (39, 53), (93, 3)],
+        "depressed": [(39, 53), (94, 5), (94, 6), (12, 87), (93, 3)],
+        "grief": [(12, 86), (3, 139), (9, 40)],
+        "stressed": [(94, 6), (2, 286), (65, 3), (13, 28), (2, 153), (40, 60), (2, 45), (3, 200), (2, 156), (23, 111)],
+        "hardship": [(94, 5), (94, 6), (65, 7), (2, 214)],
+        "overwhelmed": [(2, 286), (2, 153), (40, 60)],
+        "grateful": [(14, 7), (2, 152), (55, 13), (31, 12), (16, 114), (27, 19), (2, 172), (3, 145)],
+        "thankful": [(14, 7), (2, 152), (31, 12)],
+        "happy": [(10, 58), (3, 170), (43, 70), (76, 11)],
+        "peace": [(13, 28), (48, 4), (2, 45), (10, 25), (36, 58), (25, 63), (89, 27)],
+        "hope": [(39, 53), (94, 5), (12, 87), (3, 139), (15, 56), (65, 4), (2, 214)],
+        "despair": [(39, 53), (12, 87), (15, 56)],
+        "angry": [(3, 134), (42, 37), (7, 199), (41, 34), (3, 159), (2, 153)],
+        "mad": [(3, 134), (41, 34), (7, 199)],
+        "frustrated": [(2, 153), (94, 5), (3, 200)],
+        "lonely": [(50, 16), (2, 186), (57, 4), (9, 40), (20, 46), (6, 59), (93, 3)],
+        "alone": [(50, 16), (2, 186), (57, 4), (20, 46)],
+        "abandoned": [(93, 3), (12, 87), (20, 46)],
+        "guilt": [(39, 53), (4, 110), (3, 135), (2, 222), (42, 25), (8, 33)],
+        "sin": [(39, 53), (4, 110), (3, 135)],
+        "forgiveness": [(39, 53), (3, 135), (7, 153), (11, 90)],
+        "isa": [(3, 45), (19, 30), (19, 33), (5, 110), (4, 171)],
+        "jesus": [(3, 45), (19, 30), (19, 33), (5, 110), (4, 171)],
+        "musa": [(20, 25), (20, 46), (28, 7), (28, 24)],
+        "moses": [(20, 25), (20, 46), (28, 7), (28, 24)],
+        "muhammad": [(33, 40), (48, 29), (3, 144), (47, 2)],
+        "mary": [(19, 17), (3, 42), (19, 27)],
+        "maryam": [(19, 17), (3, 42), (19, 27)]
     ]
     
     static let bannedWords: Set<String> = [
-        "suicide", "kill", "die", "death"
+        "slag", "slags", "hoe", "hoes", "thot", "thots", "sket", "simp", "incel",
+        "milf", "onlyfans", "nsfw", "hentai", "smut", "erotica", "sugar daddy",
+        "sugar baby", "baddie", "masturbate", "masturbation", "wank", "wanking",
+        "wanker", "wankers", "shag", "shagging", "fuck", "fucked", "fucker", "fucking",
+        "motherfucker", "blowjob", "handjob", "anal", "orgy", "orgies", "orgasm",
+        "ejaculate", "ejaculation", "cum", "semen", "threesome", "gangbang", "bukkake",
+        "bdsm", "dick", "dicks", "cock", "cocks", "prick", "pricks", "schlong",
+        "pecker", "boner", "pussy", "cunt", "twat", "clit", "vagina", "penis",
+        "boob", "boobs", "tit", "tits", "titties", "ass", "asses", "asshole",
+        "arse", "arsehole", "booty", "dildo", "vibrator", "bitch", "bitches",
+        "bastard", "shit", "shitty", "bullshit", "crap", "piss", "pissed", "douche",
+        "douchebag", "dickhead", "shithead", "dumbass", "jackass", "bugger",
+        "bollocks", "fag", "faggot", "dyke", "tranny", "porn", "porno", "pornography",
+        "nude", "nudes", "fetish", "kink", "kinky", "escort", "hooker", "hookers",
+        "slut", "sluts", "slutty", "whore", "whores", "skank", "pedophile",
+        "pedophilia", "pedo", "incest", "nympho", "horny", "suicide", "suicidal",
+        "overdose", "self-harm", "slit"
     ]
     
     static func isSafe(_ query: String) -> Bool {
-        let words = Set(query.lowercased().components(separatedBy: .whitespacesAndNewlines))
+        let cleanQuery = query.components(separatedBy: CharacterSet.punctuationCharacters).joined(separator: " ")
+        let words = Set(cleanQuery.lowercased().components(separatedBy: .whitespacesAndNewlines))
         return words.isDisjoint(with: bannedWords)
     }
     
@@ -362,22 +473,26 @@ struct QuranSearchManager {
         guard !allVerses.isEmpty else { return nil }
         let lowQuery = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         
-        // 1. Direct thematic match lookup
+        var matchedThematicVerses: [(surah: Int, verse: Int)] = []
+        
         for (key, versesList) in thematicVerses {
-            if lowQuery.contains(key) || key.contains(lowQuery) {
-                if let target = versesList.randomElement(),
-                   let found = allVerses.first(where: { $0.surahNumber == target.surah && $0.verseNumber == target.verse }) {
-                    return found
-                }
+            if lowQuery.contains(key) {
+                matchedThematicVerses.append(contentsOf: versesList)
             }
         }
         
-        // 2. Fallback text search
-        let matched = allVerses.filter {
+        if !matchedThematicVerses.isEmpty {
+            if let target = matchedThematicVerses.randomElement(),
+               let found = allVerses.first(where: { $0.surahNumber == target.surah && $0.verseNumber == target.verse }) {
+                return found
+            }
+        }
+        
+        let matchedText = allVerses.filter {
             $0.translation.localizedCaseInsensitiveContains(lowQuery) ||
             $0.text.localizedCaseInsensitiveContains(lowQuery)
         }
         
-        return matched.randomElement() ?? allVerses.randomElement()
+        return matchedText.randomElement() ?? allVerses.randomElement()
     }
 }

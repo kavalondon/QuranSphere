@@ -195,6 +195,10 @@ struct QuranReaderView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.vertical, 16)
                 .id(arabicFont + preferredScript + "\(verse.id)")
+                // 🌟 ADDED: This fires the gamification tracker instantly!
+                .onAppear {
+                    GamificationManager.shared.logVerseRead(arabicText: verse.arabicText(for: preferredScript))
+                }
             
             HStack {
                 // Native ShareLink replacing empty button
@@ -310,7 +314,6 @@ struct QuranReaderView: View {
         if isPlayingAudio {
             stopAudio()
         } else {
-            // 🌟 THE FIX: Tell iOS to play audio even if the physical silent switch is ON
             do {
                 try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
                 try AVAudioSession.sharedInstance().setActive(true)
@@ -492,7 +495,6 @@ struct ReaderSettingsSheet: View {
                 }
             }
         }
-        // 🌟 FIX: Placing this modifier ON the NavigationView forces the Navigation Bar to update its title color immediately!
         .preferredColorScheme(isDarkMode ? .dark : .light)
     }
 }
