@@ -30,6 +30,9 @@ struct CachedPrayerData: Codable {
     let dateString: String
     let latitude: Double
     let longitude: Double
+    let school: Int
+    let method: Int
+    let isAutopilot: Bool
     let timings: PrayerTimings
 }
 
@@ -43,26 +46,34 @@ class PrayerTimesManager: ObservableObject {
     
     private let cacheKey = "QuranSphere_CachedPrayerTimes"
     
-    func fetchPrayerTimes(for location: CLLocation) async {
+    func fetchPrayerTimes(for location: CLLocation, forceRefresh: Bool = false) async {
         isLoading = true
         errorMessage = nil
         
         let lat = location.coordinate.latitude
         let lon = location.coordinate.longitude
         
+        // 1. Read User Settings
+        let school = UserDefaults.standard.integer(forKey: "asrSchool")
+        var method = UserDefaults.standard.integer(forKey: "calcMethod")
+        if method == 0 { method = 2 } // Fallback to ISNA if not set
+        
+        // Check if Autopilot is enabled (defaults to true if the user hasn't toggled it yet)
+        let isAutopilot = UserDefaults.standard.object(forKey: "isAutopilotEnabled") == nil ? true : UserDefaults.standard.bool(forKey: "isAutopilotEnabled")
+        
         let formatter = DateFormatter()
         formatter.dateFormat = "dd-MM-yyyy"
         let dateString = formatter.string(from: Date())
         
-        // 1. CACHING: Check if we already have today's times for this approximate location
-        if let cachedData = loadCachedData(),
-           cachedData.dateString == dateString {
+        // 2. CACHING: Prevent unnecessary network calls
+        if !forceRefresh, let cachedData = loadCachedData(),
+           cachedData.dateString == dateString,
+           cachedData.school == school,
+           cachedData.method == method,
+           cachedData.isAutopilot == isAutopilot {
             
             let cachedLocation = CLLocation(latitude: cachedData.latitude, longitude: cachedData.longitude)
-            let distanceInMeters = location.distance(from: cachedLocation)
-            
-            // If the user hasn't moved more than 10km (approx 6 miles), use cached times
-            if distanceInMeters < 10000 {
+            if location.distance(from: cachedLocation) < 10000 {
                 self.timings = cachedData.timings
                 self.calculateNextPrayer(from: cachedData.timings)
                 self.isLoading = false
@@ -70,8 +81,12 @@ class PrayerTimesManager: ObservableObject {
             }
         }
         
-        // 2. FETCH: If no valid cache, fetch from network
-        let urlString = "https://api.aladhan.com/v1/timings/\(dateString)?latitude=\(lat)&longitude=\(lon)&method=2"
+        // 3. AUTOPILOT LOGIC:
+        // If Autopilot is ON, we omit the method parameter. AlAdhan will automatically detect the best method for these coordinates.
+        // If Autopilot is OFF, we pass the user's manual method.
+        let methodParameter = isAutopilot ? "" : "&method=\(method)"
+        
+        let urlString = "https://api.aladhan.com/v1/timings/\(dateString)?latitude=\(lat)&longitude=\(lon)&school=\(school)\(methodParameter)"
         
         guard let url = URL(string: urlString) else {
             errorMessage = "Invalid URL constructed."
@@ -79,6 +94,7 @@ class PrayerTimesManager: ObservableObject {
             return
         }
         
+        // 4. FETCH
         do {
             let (data, _) = try await URLSession.shared.data(from: url)
             let decodedResponse = try JSONDecoder().decode(PrayerApiResponse.self, from: data)
@@ -87,12 +103,12 @@ class PrayerTimesManager: ObservableObject {
             self.timings = fetchedTimings
             self.calculateNextPrayer(from: fetchedTimings)
             
-            // Save to cache
-            let newCache = CachedPrayerData(dateString: dateString, latitude: lat, longitude: lon, timings: fetchedTimings)
+            // Save to cache including settings
+            let newCache = CachedPrayerData(dateString: dateString, latitude: lat, longitude: lon, school: school, method: method, isAutopilot: isAutopilot, timings: fetchedTimings)
             saveToCache(newCache)
             
         } catch {
-            if self.timings == nil { // Only show error if we have no fallback data
+            if self.timings == nil {
                 self.errorMessage = "Unable to fetch times. Check your connection."
             }
         }
@@ -100,13 +116,9 @@ class PrayerTimesManager: ObservableObject {
         isLoading = false
     }
     
-    // MARK: - Format & Logic Helpers
-    
-    // Helper to format AlAdhan's 24hr "15:45 (BST)" into a clean 12hr "3:45 PM"
+    // MARK: - Helpers
     func to12Hour(time: String) -> String {
-        // Strip timezone string if present
         let cleanTime = time.components(separatedBy: " ").first ?? time
-        
         let inFormatter = DateFormatter()
         inFormatter.dateFormat = "HH:mm"
         guard let date = inFormatter.date(from: cleanTime) else { return time }
@@ -116,16 +128,9 @@ class PrayerTimesManager: ObservableObject {
         return outFormatter.string(from: date)
     }
     
-    // Determine the next upcoming prayer based on current time
     private func calculateNextPrayer(from timings: PrayerTimings) {
-        let prayers = [
-            ("Fajr", timings.Fajr),
-            ("Sunrise", timings.Sunrise),
-            ("Dhuhr", timings.Dhuhr),
-            ("Asr", timings.Asr),
-            ("Maghrib", timings.Maghrib),
-            ("Isha", timings.Isha)
-        ]
+        let prayers = [("Fajr", timings.Fajr), ("Sunrise", timings.Sunrise), ("Dhuhr", timings.Dhuhr),
+                       ("Asr", timings.Asr), ("Maghrib", timings.Maghrib), ("Isha", timings.Isha)]
         
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
@@ -138,12 +143,10 @@ class PrayerTimesManager: ObservableObject {
                 return
             }
         }
-        
-        // If all prayers have passed today, the next prayer is Fajr tomorrow
         self.nextPrayerName = "Fajr"
     }
     
-    // MARK: - UserDefaults Caching
+    // MARK: - Caching
     private func saveToCache(_ data: CachedPrayerData) {
         if let encoded = try? JSONEncoder().encode(data) {
             UserDefaults.standard.set(encoded, forKey: cacheKey)

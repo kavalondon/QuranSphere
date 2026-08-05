@@ -10,12 +10,12 @@ struct SettingsView: View {
     // Core brand color
     let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
     
-    // Dynamic preview text based on the selected script
     var previewText: String {
         preferredScript == "indopak" ? "بِسۡمِ اللّٰهِ الرَّحۡمٰنِ الرَّحِيۡمِ" : "بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ"
     }
     
     var body: some View {
+        // 🌟 Removed the nested NavigationView and ScrollView here so it doesn't collapse to 0 height!
         VStack(spacing: 32) {
             
             // MARK: - Header
@@ -29,14 +29,36 @@ struct SettingsView: View {
             .padding(.horizontal, 24)
             .padding(.top, 24)
             
-            // MARK: - Appearance Section
-            settingsSection(title: "Appearance") {
-                Toggle(isOn: $isDarkMode) {
-                    settingRow(icon: isDarkMode ? "moon.stars.fill" : "sun.max.fill",
-                               title: "Dark Mode",
-                               color: isDarkMode ? .yellow : .orange)
+            // MARK: - Appearance & Notifications Section
+            settingsSection(title: "General") {
+                
+                // Themes Link
+                NavigationLink(destination: ThemeSettingsView()) {
+                    HStack {
+                        settingRow(icon: "paintpalette.fill", title: "Themes", color: .orange)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.gray.opacity(0.4))
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .contentShape(Rectangle())
                 }
-                .tint(sageGreen)
+                .buttonStyle(PlainButtonStyle())
+                
+                Divider().padding(.leading, 50).opacity(0.5)
+                
+                // Notifications Link
+                NavigationLink(destination: NotificationSettingsView()) {
+                    HStack {
+                        settingRow(icon: "bell.fill", title: "Notifications", color: .pink)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.gray.opacity(0.4))
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(PlainButtonStyle())
             }
             
             // MARK: - Live Preview Section
@@ -53,11 +75,8 @@ struct SettingsView: View {
             
             // MARK: - Quran Typography Section
             settingsSection(title: "Typography & Script") {
-                
-                // Script Selection
                 VStack(alignment: .leading, spacing: 12) {
                     settingRow(icon: "text.book.closed.fill", title: "Quran Script", color: .brown)
-                    
                     Picker("Script", selection: $preferredScript) {
                         Text("Uthmani").tag("uthmani")
                         Text("IndoPak").tag("indopak")
@@ -65,13 +84,10 @@ struct SettingsView: View {
                     .pickerStyle(SegmentedPickerStyle())
                 }
                 
-                Divider().background(Color.gray.opacity(0.2))
-                    .padding(.vertical, 4)
+                Divider().background(Color.gray.opacity(0.2)).padding(.vertical, 4)
                 
-                // Font Selection
                 VStack(alignment: .leading, spacing: 12) {
                     settingRow(icon: "character.book.closed", title: "Arabic Font", color: sageGreen)
-                    
                     Picker("Font", selection: $arabicFont) {
                         Text("Amiri").tag("AmiriQuran-Regular")
                         Text("Madinah").tag("KFGQPCUthmanTahaNaskh")
@@ -80,10 +96,8 @@ struct SettingsView: View {
                     .pickerStyle(SegmentedPickerStyle())
                 }
                 
-                Divider().background(Color.gray.opacity(0.2))
-                    .padding(.vertical, 4)
+                Divider().background(Color.gray.opacity(0.2)).padding(.vertical, 4)
                     
-                // Font Size Slider
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         settingRow(icon: "textformat.size", title: "Text Size", color: .indigo)
@@ -92,11 +106,9 @@ struct SettingsView: View {
                             .font(.system(.subheadline, design: .rounded)).bold()
                             .foregroundColor(sageGreen)
                     }
-                    
                     HStack(spacing: 16) {
                         Text("A").font(.system(size: 14))
-                        Slider(value: $arabicFontSize, in: 24...64, step: 2)
-                            .tint(sageGreen)
+                        Slider(value: $arabicFontSize, in: 24...64, step: 2).tint(sageGreen)
                         Text("A").font(.system(size: 24))
                     }
                     .foregroundColor(.gray)
@@ -105,7 +117,6 @@ struct SettingsView: View {
             
             // MARK: - Home Screen Section
             settingsSection(title: "Home Screen") {
-                // 🌟 Using standard NavigationLink to match the Home Tab perfectly
                 NavigationLink(destination: MoodCardSettingsView()) {
                     HStack(spacing: 16) {
                         ZStack {
@@ -116,24 +127,35 @@ struct SettingsView: View {
                                 .font(.system(size: 14, weight: .semibold))
                                 .foregroundColor(sageGreen)
                         }
-                        
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Mood Search Verses")
                                 .font(.system(.body, design: .serif))
                                 .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
-                            
                             Text("Adjust text size and script style")
                                 .font(.system(size: 12, design: .serif))
                                 .foregroundColor(.gray)
                         }
-                        
                         Spacer()
-                        
                         Image(systemName: "chevron.right")
                             .foregroundColor(.gray.opacity(0.4))
                             .font(.system(size: 14, weight: .semibold))
                     }
-                    .contentShape(Rectangle()) // Ensures the whole card is tappable
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+            
+            // MARK: - Prayer Times Settings Section
+            settingsSection(title: "Prayer Times") {
+                NavigationLink(destination: PrayerSettingsView()) {
+                    HStack {
+                        settingRow(icon: "clock.fill", title: "Calculation Preferences", color: sageGreen)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.gray.opacity(0.4))
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(PlainButtonStyle())
             }

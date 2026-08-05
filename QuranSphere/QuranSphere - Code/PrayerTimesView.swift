@@ -12,19 +12,48 @@ struct PrayerTimesView: View {
     
     var location: CLLocation?
     
+    @State private var showSettings = false // 🌟 ADDED: Controls the settings sheet
+    
     let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
     let accentGold = Color(red: 0.83, green: 0.67, blue: 0.51)
     
-    // A dummy object used to generate the Skeleton UI while loading
     let dummyTimings = PrayerTimings(Fajr: "04:30", Sunrise: "06:00", Dhuhr: "13:00", Asr: "16:45", Maghrib: "20:00", Isha: "21:30")
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Daily Prayers")
-                .font(.system(.title3, design: .serif))
-                .fontWeight(.bold)
-                .foregroundColor(isDarkMode ? .white : Color(red: 0.2, green: 0.2, blue: 0.2))
-                .padding(.horizontal, 24)
+            
+            // 🌟 ADDED: HStack to place the Settings gear icon next to the title
+            HStack {
+                Text("Daily Prayers")
+                    .font(.system(.title3, design: .serif))
+                    .fontWeight(.bold)
+                    .foregroundColor(isDarkMode ? .white : Color(red: 0.2, green: 0.2, blue: 0.2))
+                
+                Spacer()
+                
+                Button(action: {
+                    showSettings = true
+                }) {
+                    Image(systemName: "slider.horizontal.3") // Elegant settings icon
+                        .font(.system(size: 18))
+                        .foregroundColor(sageGreen)
+                        .padding(8)
+                        .background(sageGreen.opacity(0.12))
+                        .clipShape(Circle())
+                }
+            }
+            .padding(.horizontal, 24)
+            // 🌟 ADDED: Show the new settings sheet and refresh times when dismissed
+            .sheet(isPresented: $showSettings, onDismiss: {
+                if let location = location {
+                    Task {
+                        // Force refresh so Asr times update instantly if changed
+                        await prayerManager.fetchPrayerTimes(for: location, forceRefresh: true)
+                    }
+                }
+            }) {
+                PrayerSettingsView()
+            }
             
             if let error = prayerManager.errorMessage, prayerManager.timings == nil {
                 Text(error)
@@ -33,7 +62,6 @@ struct PrayerTimesView: View {
                     .multilineTextAlignment(.center)
                     .padding()
             } else {
-                // Determine if we show real data or skeleton placeholders
                 let displayTimings = prayerManager.timings ?? dummyTimings
                 let isSkeleton = prayerManager.isLoading && prayerManager.timings == nil
                 
@@ -49,23 +77,18 @@ struct PrayerTimesView: View {
                 .cornerRadius(24)
                 .shadow(color: Color.black.opacity(isDarkMode ? 0.3 : 0.04), radius: 15, x: 0, y: 6)
                 .padding(.horizontal, 20)
-                // 🌟 SKELETON LOADER MODIFIERS
                 .redacted(reason: isSkeleton ? .placeholder : [])
                 .animation(.easeInOut(duration: 0.4), value: isSkeleton)
             }
         }
         .onChange(of: location) { newLocation in
             if let newLocation = newLocation {
-                Task {
-                    await prayerManager.fetchPrayerTimes(for: newLocation)
-                }
+                Task { await prayerManager.fetchPrayerTimes(for: newLocation) }
             }
         }
         .onAppear {
             if let location = location {
-                Task {
-                    await prayerManager.fetchPrayerTimes(for: location)
-                }
+                Task { await prayerManager.fetchPrayerTimes(for: location) }
             }
         }
     }

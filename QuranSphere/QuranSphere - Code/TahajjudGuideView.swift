@@ -14,19 +14,23 @@ struct TahajjudGuideView: View {
         isDarkMode ? Color.white.opacity(0.06) : Color.white
     }
     
+    var textColor: Color {
+        isDarkMode ? .white.opacity(0.9) : Color(red: 0.18, green: 0.23, blue: 0.20)
+    }
+    
     var body: some View {
         ZStack {
             bgColor.ignoresSafeArea()
             
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 32) {
+                VStack(spacing: 20) {
                     headerSection
                     introSection
                     whenToPraySection
                     stepByStepSection
                     benefitsSection
                 }
-                .padding(.vertical, 24)
+                .padding(24)
             }
         }
         .navigationTitle("Tahajjud Guide")
@@ -36,57 +40,69 @@ struct TahajjudGuideView: View {
     // MARK: - Sections
     
     private var headerSection: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             Image(systemName: "moon.stars.fill")
-                .font(.system(size: 48))
+                .font(.system(size: 42))
                 .foregroundColor(accentGold)
                 .shadow(color: accentGold.opacity(0.3), radius: 10, x: 0, y: 5)
             
             Text("How to Pray Tahajjud")
-                .font(.system(.title, design: .serif)).bold()
-                .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
+                .font(.system(.title2, design: .serif)).bold()
+                .foregroundColor(textColor)
+                .multilineTextAlignment(.center)
+            
+            Text("A highly recommended voluntary night prayer to seek forgiveness and closeness to Allah.")
+                .font(.system(.subheadline, design: .serif))
+                .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
         }
-        .padding(.horizontal, 24)
+        .padding(.top, 4)
+        .padding(.bottom, 8)
     }
     
     private var introSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("A highly recommended voluntary night prayer to seek forgiveness and closeness to Allah.")
-                .font(.system(.body, design: .serif))
-                .foregroundColor(isDarkMode ? .white.opacity(0.8) : .gray)
-                .lineSpacing(6)
-            
-            quranQuoteCard(
-                verse: "And during a part of the night, pray Tahajjud beyond what is incumbent on you; maybe your Lord will raise you to a position of great glory.",
-                reference: "Qur'an 17:79"
-            )
-        }
-        .padding(.horizontal, 24)
+        quranQuoteCard(
+            verse: "And during a part of the night, pray Tahajjud beyond what is incumbent on you; maybe your Lord will raise you to a position of great glory.",
+            reference: "Qur'an 17:79",
+            color: sageGreen
+        )
     }
     
     private var whenToPraySection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            sectionTitle("When to Pray")
+            Text("When to Pray")
+                .font(.system(.title3, design: .serif)).bold()
+                .foregroundColor(accentGold)
+                .frame(maxWidth: .infinity, alignment: .leading)
             
             Text("Anytime after Isha and before Fajr. The most rewarding time is the last third of the night.")
                 .font(.system(.body, design: .serif))
-                .foregroundColor(isDarkMode ? .white.opacity(0.8) : .gray)
+                .foregroundColor(textColor)
                 .lineSpacing(6)
+                .frame(maxWidth: .infinity, alignment: .leading)
             
             hadithQuoteCard(
                 text: "Our Lord descends every night to the lowest heaven when one-third of the night remains, and He says: ‘Who will call upon Me, that I may answer him?...’",
-                reference: "Sahih al-Bukhari & Muslim"
+                reference: "Sahih al-Bukhari & Muslim",
+                color: accentGold
             )
         }
-        .padding(.horizontal, 24)
+        .padding(24)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(cardColor)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
+        .overlay(RoundedRectangle(cornerRadius: 16).stroke(accentGold.opacity(0.3), lineWidth: 1))
     }
     
     private var stepByStepSection: some View {
         VStack(alignment: .leading, spacing: 20) {
-            sectionTitle("How to Pray (2 Rakahs)")
+            Text("How to Pray (2 Rakahs)")
+                .font(.system(.title3, design: .serif)).bold()
+                .foregroundColor(sageGreen)
+                .frame(maxWidth: .infinity, alignment: .leading)
             
-            VStack(spacing: 24) {
+            VStack(spacing: 16) {
                 stepCard(step: 1, title: "Intention", desc: "Face the Qibla and make a sincere intention to pray Tahajjud.", imageName: "salah-step-01-niyyah")
                 stepCard(step: 2, title: "Takbeer", desc: "Raise your hands and say “Allahu Akbar”.", imageName: "salah-step-02-takbeer")
                 stepCard(step: 3, title: "Recitation", desc: "Recite Surah Al-Fatihah, followed by another Surah.", imageName: "salah-step-03-qiyam")
@@ -98,82 +114,75 @@ struct TahajjudGuideView: View {
                 stepCard(step: 9, title: "Tasleem", desc: "Turn your head right then left, saying “Assalamu alaikum wa rahmatullah”. Conclude with heartfelt Dua.", imageName: "salah-step-09-salaam")
             }
         }
-        .padding(.horizontal, 24)
     }
     
     private var benefitsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            sectionTitle("Consistency is Key")
-            
-            hadithQuoteCard(
-                text: "The most beloved deeds to Allah are those that are consistent, even if they are small.",
-                reference: "Sahih al-Bukhari & Muslim"
-            )
-        }
-        .padding(.horizontal, 24)
+        hadithQuoteCard(
+            text: "The most beloved deeds to Allah are those that are consistent, even if they are small.",
+            reference: "Sahih al-Bukhari & Muslim",
+            color: sageGreen
+        )
     }
     
     // MARK: - Reusable UI Components
     
-    private func sectionTitle(_ text: String) -> some View {
-        Text(text)
-            .font(.system(.title3, design: .serif)).bold()
-            .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
-    }
-    
-    private func quranQuoteCard(verse: String, reference: String) -> some View {
+    private func quranQuoteCard(verse: String, reference: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
+            HStack(spacing: 8) {
                 Image(systemName: "book.fill")
-                    .foregroundColor(sageGreen)
+                    .foregroundColor(color)
+                    .font(.system(size: 14))
                 Text("Al-Qur'an")
                     .font(.system(.caption, design: .monospaced)).bold()
-                    .foregroundColor(sageGreen)
+                    .foregroundColor(color)
             }
             Text("“\(verse)”")
                 .font(.system(.body, design: .serif))
                 .italic()
-                .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
-                .lineSpacing(4)
+                .foregroundColor(textColor)
+                .lineSpacing(6)
             Text(reference)
                 .font(.system(.caption, design: .serif))
                 .foregroundColor(.gray)
         }
-        .padding(20)
+        .padding(24)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(cardColor)
         .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(sageGreen.opacity(0.3), lineWidth: 1)
+                .stroke(color.opacity(0.3), lineWidth: 1)
         )
     }
     
-    private func hadithQuoteCard(text: String, reference: String) -> some View {
+    private func hadithQuoteCard(text: String, reference: String, color: Color) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
+            HStack(spacing: 8) {
                 Image(systemName: "quote.opening")
-                    .foregroundColor(accentGold)
+                    .foregroundColor(color)
+                    .font(.system(size: 14))
                 Text("Hadith")
                     .font(.system(.caption, design: .monospaced)).bold()
-                    .foregroundColor(accentGold)
+                    .foregroundColor(color)
             }
             Text("“\(text)”")
                 .font(.system(.body, design: .serif))
                 .italic()
-                .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
-                .lineSpacing(4)
+                .foregroundColor(textColor)
+                .lineSpacing(6)
             Text(reference)
                 .font(.system(.caption, design: .serif))
                 .foregroundColor(.gray)
         }
-        .padding(20)
+        .padding(24)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(cardColor)
         .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(accentGold.opacity(0.3), lineWidth: 1)
+                .stroke(color.opacity(0.3), lineWidth: 1)
         )
     }
     
@@ -195,14 +204,13 @@ struct TahajjudGuideView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.system(.headline, design: .serif)).bold()
-                        .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
+                        .foregroundColor(textColor)
                     Text(desc)
                         .font(.system(.subheadline, design: .serif))
                         .foregroundColor(isDarkMode ? .white.opacity(0.7) : .gray)
                         .lineSpacing(4)
                 }
                 
-                // Updated Image Container
                 ZStack {
                     RoundedRectangle(cornerRadius: 12)
                         .fill(isDarkMode ? themeColor.opacity(0.15) : themeColor.opacity(0.08))
@@ -210,19 +218,24 @@ struct TahajjudGuideView: View {
                     Image(imageName)
                         .resizable()
                         .scaledToFit()
-                        .padding(8) // Gives the image breathing room but maximizes size
+                        .padding(8)
                 }
-                .frame(height: 140) // Controls the box height, allowing the image to expand fully within it
-                .clipShape(RoundedRectangle(cornerRadius: 12)) // Prevents large images from spilling over the corners
+                .frame(height: 140)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(themeColor.opacity(isDarkMode ? 0.2 : 0.15), lineWidth: 1)
                 )
             }
         }
-        .padding(16)
+        .padding(24)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(cardColor)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.02), radius: 6, x: 0, y: 3)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(themeColor.opacity(0.3), lineWidth: 1)
+        )
     }
 }

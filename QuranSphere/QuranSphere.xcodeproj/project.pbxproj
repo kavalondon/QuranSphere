@@ -42,6 +42,12 @@
 		5E854DB0300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5E854DAE300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf */; };
 		5ECB339B30234C0400E195A1 /* PrayerTimesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECB339930234B0600E195A1 /* PrayerTimesView.swift */; };
 		5ECB339C30234C8F00E195A1 /* PrayerTimesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECB33953023492B00E195A1 /* PrayerTimesManager.swift */; };
+		5ECB339E30236CDF00E195A1 /* PrayerSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECB339D30236CDC00E195A1 /* PrayerSettingsView.swift */; };
+		5ECB33A03023705B00E195A1 /* ThemeSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECB339F3023705900E195A1 /* ThemeSettingsView.swift */; };
+		5ECB33A23023707100E195A1 /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECB33A13023706E00E195A1 /* NotificationSettingsView.swift */; };
+		5ECB33A4302377DD00E195A1 /* DailyDua.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECB33A3302377DA00E195A1 /* DailyDua.swift */; };
+		5ECB33A6302377F900E195A1 /* DailyDuasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECB33A5302377F700E195A1 /* DailyDuasView.swift */; };
+		5ECB33A83023781500E195A1 /* DuaDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECB33A73023781200E195A1 /* DuaDetailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -99,6 +105,12 @@
 		5E854DB2300CEEF400E627E6 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; name = Info.plist; path = QuranSphere/Info.plist; sourceTree = "<group>"; };
 		5ECB33953023492B00E195A1 /* PrayerTimesManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerTimesManager.swift; sourceTree = "<group>"; };
 		5ECB339930234B0600E195A1 /* PrayerTimesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerTimesView.swift; sourceTree = "<group>"; };
+		5ECB339D30236CDC00E195A1 /* PrayerSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerSettingsView.swift; sourceTree = "<group>"; };
+		5ECB339F3023705900E195A1 /* ThemeSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeSettingsView.swift; sourceTree = "<group>"; };
+		5ECB33A13023706E00E195A1 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
+		5ECB33A3302377DA00E195A1 /* DailyDua.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyDua.swift; sourceTree = "<group>"; };
+		5ECB33A5302377F700E195A1 /* DailyDuasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyDuasView.swift; sourceTree = "<group>"; };
+		5ECB33A73023781200E195A1 /* DuaDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuaDetailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -164,6 +176,12 @@
 		5E854DA5300C564F00E627E6 /* QuranSphere - Code */ = {
 			isa = PBXGroup;
 			children = (
+				5ECB33A73023781200E195A1 /* DuaDetailView.swift */,
+				5ECB33A5302377F700E195A1 /* DailyDuasView.swift */,
+				5ECB33A3302377DA00E195A1 /* DailyDua.swift */,
+				5ECB33A13023706E00E195A1 /* NotificationSettingsView.swift */,
+				5ECB339F3023705900E195A1 /* ThemeSettingsView.swift */,
+				5ECB339D30236CDC00E195A1 /* PrayerSettingsView.swift */,
 				5ECB339930234B0600E195A1 /* PrayerTimesView.swift */,
 				5ECB33953023492B00E195A1 /* PrayerTimesManager.swift */,
 				5E14953D301283FB003D68DC /* SalahStepsView.swift */,
@@ -363,18 +381,23 @@
 			files = (
 				5E854D92300C55AA00E627E6 /* ContentView.swift in Sources */,
 				5E854D93300C55AA00E627E6 /* SettingsView.swift in Sources */,
+				5ECB33A4302377DD00E195A1 /* DailyDua.swift in Sources */,
 				5E854D94300C55AA00E627E6 /* QiblaView.swift in Sources */,
+				5ECB33A6302377F900E195A1 /* DailyDuasView.swift in Sources */,
 				5ECB339C30234C8F00E195A1 /* PrayerTimesManager.swift in Sources */,
 				5E14953630123238003D68DC /* GuidesSectionView.swift in Sources */,
 				5E854D95300C55AA00E627E6 /* LocalQuranManager.swift in Sources */,
+				5ECB33A23023707100E195A1 /* NotificationSettingsView.swift in Sources */,
 				5E854D96300C55AA00E627E6 /* QiblaCompassManager.swift in Sources */,
 				5E854D97300C55AA00E627E6 /* QiblaCompassView.swift in Sources */,
+				5ECB339E30236CDF00E195A1 /* PrayerSettingsView.swift in Sources */,
 				5E14952E300D9F02003D68DC /* QiblaPrayerTimesView.swift in Sources */,
 				5E854D98300C55AA00E627E6 /* AppSettingsView.swift in Sources */,
 				5E14953C30127515003D68DC /* WuduGuideView.swift in Sources */,
 				5E14953830123351003D68DC /* TahajjudGuideView.swift in Sources */,
 				5E854D99300C55AA00E627E6 /* Color+Palette.swift in Sources */,
 				5E14953E301283FE003D68DC /* SalahStepsView.swift in Sources */,
+				5ECB33A03023705B00E195A1 /* ThemeSettingsView.swift in Sources */,
 				5E854D9A300C55AA00E627E6 /* SurahListView.swift in Sources */,
 				5E149532300F0048003D68DC /* MoodCardSettingsView.swift in Sources */,
 				5E1495343010EF98003D68DC /* GamificationManager.swift in Sources */,
@@ -384,6 +407,7 @@
 				5E14953A30127395003D68DC /* PrayerGuideListView.swift in Sources */,
 				5E854D9D300C55AA00E627E6 /* MoodBannerView.swift in Sources */,
 				5E149530300DA47A003D68DC /* BookmarksView.swift in Sources */,
+				5ECB33A83023781500E195A1 /* DuaDetailView.swift in Sources */,
 				5E854D9E300C55AA00E627E6 /* QuranReaderView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

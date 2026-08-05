@@ -96,7 +96,7 @@ extension ContentView {
             comfortVerseSection
             progressDashboard
             quickLinksGrid
-            GuidesSectionView() // 🌟 Cleanly calling your separated component file
+            GuidesSectionView()
         }
     }
     
@@ -257,9 +257,10 @@ extension ContentView {
                 pageCard(title: "The Holy Quran", icon: "book.fill", bgColor: Color(red: 0.38, green: 0.48, blue: 0.43))
             }.buttonStyle(PlainButtonStyle())
             
-            NavigationLink(destination: Text("Daily Duas Coming Soon")) {
+            NavigationLink(destination: DailyDuasView()) {
                 pageCard(title: "Daily Duas", icon: "sparkles", bgColor: Color(red: 0.52, green: 0.61, blue: 0.56))
-            }.buttonStyle(PlainButtonStyle())
+            }
+            .buttonStyle(PlainButtonStyle())
             
             NavigationLink(destination: BookmarksView()) {
                 pageCard(title: "Bookmarks", icon: "bookmark.fill", bgColor: Color(red: 0.38, green: 0.48, blue: 0.43))
