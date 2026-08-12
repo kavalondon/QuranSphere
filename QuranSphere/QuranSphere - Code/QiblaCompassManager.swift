@@ -1,12 +1,7 @@
-//
-//  QiblaCompassManager.swift
-//  QuranSphere
-//
-
 import Foundation
 internal import CoreLocation
 internal import Combine
-import MapKit // 🌟 ADDED: Required for iOS 26.0+ Geocoding
+import MapKit
 
 class QiblaCompassManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     private var locationManager: CLLocationManager?
@@ -21,6 +16,9 @@ class QiblaCompassManager: NSObject, ObservableObject, CLLocationManagerDelegate
     private let kaabaLatitude = 21.4225
     private let kaabaLongitude = 39.8262
     
+    // 🌟 THE FIX: This tracks continuous rotation to prevent the 360° spin glitch
+    private var lastHeading: Double = 0.0
+    
     override init() {
         super.init()
     }
@@ -29,9 +27,13 @@ class QiblaCompassManager: NSObject, ObservableObject, CLLocationManagerDelegate
         if locationManager == nil {
             let manager = CLLocationManager()
             manager.delegate = self
-            // LOW POWER: 3km accuracy is perfect. It gives the same Qibla angle globally.
-            manager.desiredAccuracy = kCLLocationAccuracyThreeKilometers
-            manager.headingFilter = 1.0
+            
+            // 🌟 THE FIX: Increased accuracy slightly for a better initial lock
+            manager.desiredAccuracy = kCLLocationAccuracyKilometer
+            
+            // 🌟 THE FIX: Remove the 1-degree threshold so sensor updates stream continuously at ~60fps
+            manager.headingFilter = kCLHeadingFilterNone
+            
             self.locationManager = manager
         }
         
@@ -62,26 +64,23 @@ class QiblaCompassManager: NSObject, ObservableObject, CLLocationManagerDelegate
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         
-        // 🌟 ADDED: Save the location so the PrayerTimesManager can use it
-        self.lastLocation = location
+        // 🌟 THE FIX: Reject cached, old, or highly inaccurate locations
+        if location.horizontalAccuracy < 0 || location.horizontalAccuracy > 2000 { return }
+        if abs(location.timestamp.timeIntervalSinceNow) > 10 { return }
         
+        self.lastLocation = location
         calculateQibla(from: location)
         
-        // EXTREME BATTERY SAVER: Shut down the GPS antenna immediately after getting a lock.
+        // Safe to stop updating now that we have a solid, current lock
         manager.stopUpdatingLocation()
         
-        // 🌟 UPDATED: MapKit implementation for iOS 26.0+
         if locationName == "Locating..." {
-            // Initiate the modern MapKit geocoding request
             guard let request = MKReverseGeocodingRequest(location: location) else { return }
             
             request.getMapItems { [weak self] items, error in
                 guard let self = self, let mapItem = items?.first, error == nil else { return }
                 
-                // Extract MapKit's placemark from the map item
                 let placemark = mapItem.placemark
-                
-                // Extract Town/City and Country natively
                 let city = placemark.locality ?? placemark.subAdministrativeArea ?? "Unknown Area"
                 let country = placemark.country ?? ""
                 
@@ -97,11 +96,21 @@ class QiblaCompassManager: NSObject, ObservableObject, CLLocationManagerDelegate
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateHeading newHeading: CLHeading) {
-        // True Heading (or magnetic heading if unavailable)
-        self.heading = newHeading.trueHeading >= 0 ? newHeading.trueHeading : newHeading.magneticHeading
+        let rawHeading = newHeading.trueHeading >= 0 ? newHeading.trueHeading : newHeading.magneticHeading
+        
+        // 🌟 THE FIX: Calculate shortest path difference to prevent 360-degree snap
+        var diff = rawHeading - self.lastHeading
+        if diff > 180 { diff -= 360 }
+        else if diff < -180 { diff += 360 }
+        
+        let continuousHeading = self.lastHeading + diff
+        self.lastHeading = continuousHeading
+        
+        DispatchQueue.main.async {
+            self.heading = continuousHeading
+        }
     }
     
-    // Spherical trigonometry calculation to align direction to Kaaba
     private func calculateQibla(from userLocation: CLLocation) {
         let lat1 = userLocation.coordinate.latitude * .pi / 180.0
         let lon1 = userLocation.coordinate.longitude * .pi / 180.0
@@ -117,6 +126,8 @@ class QiblaCompassManager: NSObject, ObservableObject, CLLocationManagerDelegate
         var qiblaRad = atan2(y, x)
         if qiblaRad < 0 { qiblaRad += 2 * .pi }
         
-        self.qiblaDirection = qiblaRad * 180.0 / .pi
+        DispatchQueue.main.async {
+            self.qiblaDirection = qiblaRad * 180.0 / .pi
+        }
     }
 }

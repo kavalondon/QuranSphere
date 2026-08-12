@@ -48,6 +48,9 @@
 		5ECB33A4302377DD00E195A1 /* DailyDua.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECB33A3302377DA00E195A1 /* DailyDua.swift */; };
 		5ECB33A6302377F900E195A1 /* DailyDuasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECB33A5302377F700E195A1 /* DailyDuasView.swift */; };
 		5ECB33A83023781500E195A1 /* DuaDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECB33A73023781200E195A1 /* DuaDetailView.swift */; };
+		5ED0B9EE302CBCE600917140 /* RichQuranVerse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED0B9ED302CBCE100917140 /* RichQuranVerse.swift */; };
+		5ED0B9F0302CCDE500917140 /* quran-indopak.json in Resources */ = {isa = PBXBuildFile; fileRef = 5ED0B9EF302CCDE500917140 /* quran-indopak.json */; };
+		5ED0B9F2302CCF4E00917140 /* quran-transliteration.json in Resources */ = {isa = PBXBuildFile; fileRef = 5ED0B9F1302CCF4E00917140 /* quran-transliteration.json */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -111,6 +114,9 @@
 		5ECB33A3302377DA00E195A1 /* DailyDua.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyDua.swift; sourceTree = "<group>"; };
 		5ECB33A5302377F700E195A1 /* DailyDuasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyDuasView.swift; sourceTree = "<group>"; };
 		5ECB33A73023781200E195A1 /* DuaDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuaDetailView.swift; sourceTree = "<group>"; };
+		5ED0B9ED302CBCE100917140 /* RichQuranVerse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichQuranVerse.swift; sourceTree = "<group>"; };
+		5ED0B9EF302CCDE500917140 /* quran-indopak.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "quran-indopak.json"; sourceTree = "<group>"; };
+		5ED0B9F1302CCF4E00917140 /* quran-transliteration.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "quran-transliteration.json"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -176,6 +182,7 @@
 		5E854DA5300C564F00E627E6 /* QuranSphere - Code */ = {
 			isa = PBXGroup;
 			children = (
+				5ED0B9ED302CBCE100917140 /* RichQuranVerse.swift */,
 				5ECB33A73023781200E195A1 /* DuaDetailView.swift */,
 				5ECB33A5302377F700E195A1 /* DailyDuasView.swift */,
 				5ECB33A3302377DA00E195A1 /* DailyDua.swift */,
@@ -205,6 +212,8 @@
 				5E854D88300C55AA00E627E6 /* QiblaCompassView.swift */,
 				5E854D89300C55AA00E627E6 /* QiblaManager.swift */,
 				5E854D8A300C55AA00E627E6 /* QiblaView.swift */,
+				5ED0B9F1302CCF4E00917140 /* quran-transliteration.json */,
+				5ED0B9EF302CCDE500917140 /* quran-indopak.json */,
 				5E854D8B300C55AA00E627E6 /* quran-arabic.json */,
 				5E854D8C300C55AA00E627E6 /* quran-chapters.json */,
 				5E854D8D300C55AA00E627E6 /* quran-english.json */,
@@ -345,9 +354,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				5E854D9F300C55AA00E627E6 /* quran-chapters.json in Resources */,
+				5ED0B9F0302CCDE500917140 /* quran-indopak.json in Resources */,
 				5E854DA0300C55AA00E627E6 /* quran-english.json in Resources */,
 				5E854DA8300CECBC00E627E6 /* _PDMS_Saleem_QuranFont Regular.ttf in Resources */,
 				5E854DA1300C55AA00E627E6 /* quran-arabic.json in Resources */,
+				5ED0B9F2302CCF4E00917140 /* quran-transliteration.json in Resources */,
 				5E854DA2300C55AA00E627E6 /* Assets.xcassets in Resources */,
 				5E854DA3300C55AA00E627E6 /* DevLog.md in Resources */,
 				5E854DAF300CECDF00E627E6 /* KFGQPC Uthman Taha Naskh Regular.ttf in Resources */,
@@ -389,6 +400,7 @@
 				5E854D95300C55AA00E627E6 /* LocalQuranManager.swift in Sources */,
 				5ECB33A23023707100E195A1 /* NotificationSettingsView.swift in Sources */,
 				5E854D96300C55AA00E627E6 /* QiblaCompassManager.swift in Sources */,
+				5ED0B9EE302CBCE600917140 /* RichQuranVerse.swift in Sources */,
 				5E854D97300C55AA00E627E6 /* QiblaCompassView.swift in Sources */,
 				5ECB339E30236CDF00E195A1 /* PrayerSettingsView.swift in Sources */,
 				5E14952E300D9F02003D68DC /* QiblaPrayerTimesView.swift in Sources */,
@@ -575,6 +587,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuranSphere/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = QuranSphere;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "QuranSphere needs your location to accurately calculate prayer times and the Qibla direction";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -614,6 +627,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuranSphere/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = QuranSphere;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "QuranSphere needs your location to accurately calculate prayer times and the Qibla direction";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

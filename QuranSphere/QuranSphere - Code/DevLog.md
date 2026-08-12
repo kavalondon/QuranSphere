@@ -224,3 +224,13 @@ Focused on improving the user experience by building a lightning-fast native lau
 * **Dynamic Theming:** Configured the launch screen background to adapt automatically to user settings (Sage Green for Light Mode, Dark Slate for Dark Mode).
 * **Asset Resolution Scaling:** Utilized Xcode's 2x/3x scaling slots to ensure the central launch logo renders at the perfect size and maximum sharpness across all iPhone screens.
 * **Overcoming Simulator Caching:** Successfully troubleshooted and bypassed iOS's aggressive launch screen caching through strategic asset renaming and raw key configuration.
+
+
+## ⚙️ Technical Highlights
+•    Tactile Qibla Alignment & Haptics: Implemented precise directional haptic feedback using iOS system vibration APIs (UIImpactFeedbackGenerator), giving users a tactile pulse effect the exact moment their phone aligns with the Kaaba heading.
+•    Prayer Time Calculation Accuracy: Refined prayer calculation engine settings (adjusting calculation methods, twilight angles, and high-latitude adjustments) to guarantee precise Adhan and Prayer times based on the user's exact geographical location.
+•    Rich Quran Data Model & Multi-Script Integration: Upgraded the core JSONVerse and QuranDataParser logic to locally parse and support rich Uthmani, IndoPak (ara-quranindopak.json), and English Transliteration (ara-quran-la.json) datasets without relying on web APIs.
+•    Arabic Diacritic & Waqf Mark Rendering: Eliminated text clipping of complex Arabic ligatures, stopping marks (Meems, Jeems), and Tajweed symbols in QuranReaderView by replacing rigid .lineSpacing constraints with safe .baselineOffset and vertical padding modifiers.
+•    High-Performance Search Optimization: Refactored local verse searching to evaluate pre-computed lowercase translation strings (searchableTranslation) during initial background parsing, completely eliminating main-thread keypress lag for instant lookups.
+•    Search Bar Focus Responsiveness: Fixed a UI usability bug in SurahListView by binding an explicit @FocusState to the search TextField and adding container .onTapGesture triggers, ensuring the keyboard and cursor activate on the very first tap.
+•    Surah Nomenclature Normalization: Programmatically normalized Surah 36 metadata across static datasets and computed properties to ensure it displays cleanly and consistently as "Yaseen" across all headers and lists.

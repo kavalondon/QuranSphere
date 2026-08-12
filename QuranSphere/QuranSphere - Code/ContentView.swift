@@ -257,8 +257,9 @@ extension ContentView {
                 pageCard(title: "The Holy Quran", icon: "book.fill", bgColor: Color(red: 0.38, green: 0.48, blue: 0.43))
             }.buttonStyle(PlainButtonStyle())
             
+            // 🌟 MODIFIED: Daily Duas icon changed to praying hands
             NavigationLink(destination: DailyDuasView()) {
-                pageCard(title: "Daily Duas", icon: "sparkles", bgColor: Color(red: 0.52, green: 0.61, blue: 0.56))
+                pageCard(title: "Daily Duas", icon: "hands.sparkles.fill", bgColor: Color(red: 0.52, green: 0.61, blue: 0.56))
             }
             .buttonStyle(PlainButtonStyle())
             
@@ -266,8 +267,9 @@ extension ContentView {
                 pageCard(title: "Bookmarks", icon: "bookmark.fill", bgColor: Color(red: 0.38, green: 0.48, blue: 0.43))
             }.buttonStyle(PlainButtonStyle())
             
+            // 🌟 MODIFIED: Favourite Surahs icon changed to a heart
             NavigationLink(destination: SurahListView(showFavoritesOnly: true)) {
-                pageCard(title: "Favourite Surahs", icon: "star.fill", bgColor: Color(red: 0.83, green: 0.67, blue: 0.51))
+                pageCard(title: "Favourite Surahs", icon: "heart.fill", bgColor: Color(red: 0.83, green: 0.67, blue: 0.51))
             }.buttonStyle(PlainButtonStyle())
         }
         .padding(.horizontal, 24)

@@ -15,6 +15,11 @@ struct QiblaCompassView: View {
     let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
     let accentGold = Color(red: 0.83, green: 0.67, blue: 0.51)
     
+    // Haptic Engines
+    private let selectionFeedback = UISelectionFeedbackGenerator()
+    @State private var lastHapticDegree: Int = 0
+    @State private var hasTriggeredAlignmentHaptic = false
+    
     // Mathematical exactness for alignment
     var alignmentDifference: Double {
         var diff = abs(compassManager.qiblaDirection - compassManager.heading).truncatingRemainder(dividingBy: 360)
@@ -62,7 +67,7 @@ struct QiblaCompassView: View {
                 
                 if useLocationForQibla && (compassManager.authStatus == .authorizedWhenInUse || compassManager.authStatus == .authorizedAlways) {
                     
-                    // 🌟 MINIMALIST COMPASS DISPLAY WITH ENHANCED GLOW
+                    // 🌟 MINIMALIST COMPASS DISPLAY
                     ZStack {
                         // 1. Radiant Aura Halo (Visible only when aligned)
                         Circle()
@@ -100,6 +105,7 @@ struct QiblaCompassView: View {
                             Spacer()
                         }
                         .frame(height: 230)
+                        // 🌟 THE FIX: No SwiftUI animation modifier here. Driven purely by hardware speed.
                         .rotationEffect(.degrees(-compassManager.heading))
                         
                         // 5. The Rotating Kaaba & Needle
@@ -133,6 +139,7 @@ struct QiblaCompassView: View {
                             Spacer()
                         }
                         .frame(height: 300)
+                        // 🌟 THE FIX: No SwiftUI animation modifier here. Driven purely by hardware speed.
                         .rotationEffect(.degrees(compassManager.qiblaDirection - compassManager.heading))
                         
                         // 6. Center Pivot
@@ -145,10 +152,17 @@ struct QiblaCompassView: View {
                             )
                     }
                     .frame(height: 340)
-                    .animation(.spring(response: 0.4, dampingFraction: 0.7), value: compassManager.heading)
-                    .onChange(of: compassManager.heading) { _, _ in
+                    .onChange(of: compassManager.heading) { _, newHeading in
+                        // 🌟 THE NEW TICK ENGINE
+                        let currentDegree = Int(newHeading)
+                        if currentDegree != lastHapticDegree {
+                            selectionFeedback.selectionChanged()
+                            lastHapticDegree = currentDegree
+                        }
+                        
+                        // The heavier impact when you align with the Kaaba
                         if isAligned {
-                            triggerHapticFeedback()
+                            triggerAlignmentHaptic()
                         }
                     }
                     
@@ -190,6 +204,7 @@ struct QiblaCompassView: View {
             }
         }
         .onAppear {
+            selectionFeedback.prepare() // Wakes up the Taptic Engine
             if useLocationForQibla {
                 compassManager.startTracking()
             }
@@ -199,15 +214,15 @@ struct QiblaCompassView: View {
         }
     }
     
-    @State private var hasTriggeredHaptic = false
-    private func triggerHapticFeedback() {
-        if !hasTriggeredHaptic {
-            let generator = UIImpactFeedbackGenerator(style: .medium)
+    private func triggerAlignmentHaptic() {
+        if !hasTriggeredAlignmentHaptic {
+            let generator = UIImpactFeedbackGenerator(style: .heavy)
             generator.impactOccurred()
-            hasTriggeredHaptic = true
+            hasTriggeredAlignmentHaptic = true
             
+            // Cooldown so it doesn't buzz wildly if you hover on the edge
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                hasTriggeredHaptic = false
+                hasTriggeredAlignmentHaptic = false
             }
         }
     }

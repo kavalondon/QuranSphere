@@ -15,8 +15,9 @@ struct QuranReaderView: View {
     @AppStorage("lastReadVerse") private var lastReadVerse = 1
     @AppStorage("readingProgress") private var readingProgress: Double = 0.0
     
-    // Feature Storage: Bookmarks (stored as comma-separated integers)
+    // Feature Storage: Bookmarks & Favorites (stored as comma-separated integers)
     @AppStorage("bookmarkedVerseIDs") private var bookmarkedVerseIDsStr: String = ""
+    @AppStorage("favoriteSurahIDs") private var favoriteSurahIDsStr: String = ""
     
     // Typography AppStorage variables
     @AppStorage("arabicFont") private var arabicFont = "KFGQPCUthmanTahaNaskh"
@@ -88,39 +89,73 @@ struct QuranReaderView: View {
     
     private var headerSection: some View {
         VStack(spacing: 16) {
-            HStack {
-                Button(action: {
-                    stopAudio()
-                    dismiss()
-                }) {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundColor(isDarkMode ? .white : .black)
-                        .padding(12)
-                        .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
-                        .clipShape(Circle())
+            HStack(spacing: 8) {
+                // Back & Restart Buttons
+                HStack(spacing: 8) {
+                    Button(action: {
+                        stopAudio()
+                        dismiss()
+                    }) {
+                        Image(systemName: "arrow.left")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(isDarkMode ? .white : .black)
+                            .padding(10)
+                            .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                            .clipShape(Circle())
+                    }
+                    
+                    Button(action: {
+                        restartSurah()
+                    }) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(currentVerseIndex > 0 ? (isDarkMode ? .white : .black) : .gray.opacity(0.3))
+                            .padding(10)
+                            .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                            .clipShape(Circle())
+                    }
+                    .disabled(currentVerseIndex == 0)
                 }
                 
-                Spacer()
+                Spacer(minLength: 4)
                 
-                HStack(spacing: 12) {
+                // Center Status Pill
+                HStack(spacing: 8) {
                     Image(systemName: "clock.fill")
                         .foregroundColor(sageGreen)
                     Text("Daily Reading")
                         .font(.system(.subheadline, design: .rounded)).bold()
+                        .lineLimit(1)
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 14)
                 .padding(.vertical, 8)
                 .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
                 .clipShape(Capsule())
                 
-                Spacer()
+                Spacer(minLength: 4)
                 
-                Button(action: { showSettings = true }) {
-                    Image(systemName: "gearshape")
-                        .font(.system(size: 20))
-                        .foregroundColor(isDarkMode ? .white : .black)
-                        .padding(12)
+                // Favorite & Settings Buttons
+                HStack(spacing: 8) {
+                    let isFav = favoriteSurahs.contains(surahNumber)
+                    Button(action: {
+                        toggleFavoriteSurah()
+                    }) {
+                        Image(systemName: isFav ? "heart.fill" : "heart")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(isFav ? .red : (isDarkMode ? .white : .black))
+                            .padding(10)
+                            .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                            .clipShape(Circle())
+                    }
+                    
+                    Button(action: { showSettings = true }) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(isDarkMode ? .white : .black)
+                            .padding(10)
+                            .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                            .clipShape(Circle())
+                    }
                 }
             }
             .padding(.horizontal, 24)
@@ -128,7 +163,7 @@ struct QuranReaderView: View {
             
             let totalVerses = surahVerses.count
             let currentVerseNum = currentVerseIndex + 1
-            let progress = Double(currentVerseNum) / Double(totalVerses)
+            let progress = Double(currentVerseNum) / Double(max(totalVerses, 1)) // prevent division by zero
             
             VStack(spacing: 8) {
                 ProgressView(value: progress)
@@ -186,16 +221,15 @@ struct QuranReaderView: View {
                 }
             }
             
+            // 🌟 THE FIX: Removed lineSpacing and fixedSize. Added baselineOffset.
             Text(verse.arabicText(for: preferredScript))
                 .font(.custom(arabicFont, size: arabicFontSize))
                 .multilineTextAlignment(.center)
-                .lineSpacing(18)
+                .baselineOffset(10)
                 .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
                 .frame(maxWidth: .infinity, minHeight: 150)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.vertical, 16)
+                .padding(.vertical, 24)
                 .id(arabicFont + preferredScript + "\(verse.id)")
-                // 🌟 ADDED: This fires the gamification tracker instantly!
                 .onAppear {
                     GamificationManager.shared.logVerseRead(arabicText: verse.arabicText(for: preferredScript))
                 }
@@ -308,6 +342,16 @@ struct QuranReaderView: View {
         readingProgress = min(readingProgress + (1.0 / totalVersesInQuran), 1.0)
     }
     
+    private func restartSurah() {
+        if currentVerseIndex > 0 {
+            stopAudio()
+            withAnimation(.easeInOut(duration: 0.3)) {
+                currentVerseIndex = 0
+                saveProgress()
+            }
+        }
+    }
+    
     // MARK: - Audio Logic
     
     private func toggleAudio(for verse: JSONVerse) {
@@ -336,7 +380,7 @@ struct QuranReaderView: View {
         isPlayingAudio = false
     }
     
-    // MARK: - Bookmark Logic
+    // MARK: - Bookmark & Favorite Logic
     
     private var bookmarkedIDs: [Int] {
         bookmarkedVerseIDsStr.split(separator: ",").compactMap { Int($0) }
@@ -350,6 +394,20 @@ struct QuranReaderView: View {
             current.append(id)
         }
         bookmarkedVerseIDsStr = current.map { String($0) }.joined(separator: ",")
+    }
+    
+    private var favoriteSurahs: [Int] {
+        favoriteSurahIDsStr.split(separator: ",").compactMap { Int($0) }
+    }
+    
+    private func toggleFavoriteSurah() {
+        var current = favoriteSurahs
+        if current.contains(surahNumber) {
+            current.removeAll { $0 == surahNumber }
+        } else {
+            current.append(surahNumber)
+        }
+        favoriteSurahIDsStr = current.map { String($0) }.joined(separator: ",")
     }
 }
 
@@ -390,12 +448,14 @@ struct ReaderSettingsSheet: View {
                                 .textCase(.uppercase)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
+                            // 🌟 THE FIX: Applied to the live preview window as well
                             Text(previewText)
                                 .font(.custom(arabicFont, size: arabicFontSize))
                                 .multilineTextAlignment(.center)
-                                .lineSpacing(18)
+                                .baselineOffset(10)
                                 .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
                                 .padding(.horizontal, 16)
+                                .padding(.vertical, 24)
                                 .frame(maxWidth: .infinity, minHeight: 240, maxHeight: 240)
                                 .clipped()
                                 .background(isDarkMode ? Color(red: 0.15, green: 0.17, blue: 0.16) : Color.white)

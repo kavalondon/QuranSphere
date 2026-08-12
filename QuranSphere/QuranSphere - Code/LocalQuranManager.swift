@@ -3,20 +3,30 @@ import SwiftUI
 internal import Combine
 
 // MARK: - YOUR APP'S DATA MODELS
+
+struct VerseWord: Codable, Sendable {
+    let arabic: String
+    let transliteration: String
+    let translation: String
+}
+
 struct JSONVerse: Identifiable, Sendable {
     let id: Int
     let surahNumber: Int
     let verseNumber: Int
     
-    // We now store both scripts securely
     let textUthmani: String
     let textIndopak: String
     let translation: String
     
-    // Computed property so your current UI (which uses verse.text) doesn't break!
+    // 🌟 NEW: Pre-lowercased translation to make searching lightning fast!
+    let searchableTranslation: String
+    
+    let transliteration: String
+    let words: [VerseWord]?
+    
     var text: String { textUthmani }
     
-    // A helper that lets the UI dynamically ask for a specific script
     func arabicText(for script: String) -> String {
         return script.lowercased() == "indopak" ? textIndopak : textUthmani
     }
@@ -30,7 +40,6 @@ struct SurahMetadata: Identifiable, Sendable {
     let totalVerses: Int
     let type: String
     
-    // 🌟 THE FIX: Computed properties so it perfectly matches what SurahListView expects!
     var transliteration: String { nameEN }
     var name: String { nameAR }
     var translation: String { nameTranslation }
@@ -58,8 +67,6 @@ private struct QuranDataParser: Sendable {
     private struct QVerse: Codable, Sendable {
         let id: Int
         let verseKey: String
-        
-        // Made optional so the app never crashes if a JSON file lacks one of the fonts
         let textUthmani: String?
         let textIndopak: String?
         
@@ -71,29 +78,51 @@ private struct QuranDataParser: Sendable {
     private struct QTranslationsResponse: Codable, Sendable { let translations: [QTranslation] }
     private struct QTranslation: Codable, Sendable { let text: String }
 
+    private struct FawazQuranResponse: Codable, Sendable { let quran: [FawazVerse] }
+    private struct FawazVerse: Codable, Sendable { let text: String }
+
     static func parseData() throws -> ([SurahMetadata], [JSONVerse]) {
+        // Enforce the 3 base files
         guard let chaptersUrl = Bundle.main.url(forResource: "quran-chapters", withExtension: "json"),
               let arabicUrl = Bundle.main.url(forResource: "quran-arabic", withExtension: "json"),
               let englishUrl = Bundle.main.url(forResource: "quran-english", withExtension: "json") else {
             throw URLError(.fileDoesNotExist)
         }
         
-        let chData = try Data(contentsOf: chaptersUrl)
-        let arData = try Data(contentsOf: arabicUrl)
-        let enData = try Data(contentsOf: englishUrl)
-        
         let decoder = JSONDecoder()
-        let chaptersResponse = try decoder.decode(QChaptersResponse.self, from: chData)
-        let arabicResponse = try decoder.decode(QVersesResponse.self, from: arData)
-        let englishResponse = try decoder.decode(QTranslationsResponse.self, from: enData)
+        let chaptersResponse = try decoder.decode(QChaptersResponse.self, from: Data(contentsOf: chaptersUrl))
+        let arabicResponse = try decoder.decode(QVersesResponse.self, from: Data(contentsOf: arabicUrl))
+        let englishResponse = try decoder.decode(QTranslationsResponse.self, from: Data(contentsOf: englishUrl))
+        
+        // Crash-proof loading for the rich text files
+        var translitResponse: FawazQuranResponse? = nil
+        if let url = Bundle.main.url(forResource: "quran-transliteration", withExtension: "json"), let data = try? Data(contentsOf: url) {
+            translitResponse = try? decoder.decode(FawazQuranResponse.self, from: data)
+        }
+        
+        var uthmaniResponse: FawazQuranResponse? = nil
+        if let url = Bundle.main.url(forResource: "quran-uthmani", withExtension: "json"), let data = try? Data(contentsOf: url) {
+            uthmaniResponse = try? decoder.decode(FawazQuranResponse.self, from: data)
+        }
+        
+        var indopakResponse: FawazQuranResponse? = nil
+        if let url = Bundle.main.url(forResource: "quran-indopak", withExtension: "json"), let data = try? Data(contentsOf: url) {
+            indopakResponse = try? decoder.decode(FawazQuranResponse.self, from: data)
+        }
         
         var loadedSurahs: [SurahMetadata] = []
         var loadedVerses: [JSONVerse] = []
         
         for chapter in chaptersResponse.chapters {
+            // 🌟 THE FIX: Rename Surah 36 from Ya-Sin to Yaseen
+            var englishName = chapter.nameSimple
+            if chapter.id == 36 {
+                englishName = "Yaseen"
+            }
+            
             let metadata = SurahMetadata(
                 id: chapter.id,
-                nameEN: chapter.nameSimple,
+                nameEN: englishName,
                 nameAR: chapter.nameArabic,
                 nameTranslation: chapter.translatedName.name,
                 totalVerses: chapter.versesCount,
@@ -105,6 +134,10 @@ private struct QuranDataParser: Sendable {
         for (index, arVerse) in arabicResponse.verses.enumerated() {
             let enVerse = englishResponse.translations[index]
             
+            let richUthmaniText = uthmaniResponse?.quran.indices.contains(index) == true ? uthmaniResponse!.quran[index].text : (arVerse.textUthmani ?? "Text unavailable")
+            let richIndopakText = indopakResponse?.quran.indices.contains(index) == true ? indopakResponse!.quran[index].text : (arVerse.textIndopak ?? richUthmaniText)
+            let transVerseText = translitResponse?.quran.indices.contains(index) == true ? translitResponse!.quran[index].text : ""
+            
             let components = arVerse.verseKey.split(separator: ":")
             let surahNum = Int(components[0]) ?? 0
             let verseNum = Int(components[1]) ?? 0
@@ -115,9 +148,12 @@ private struct QuranDataParser: Sendable {
                 id: arVerse.id,
                 surahNumber: surahNum,
                 verseNumber: verseNum,
-                textUthmani: arVerse.textUthmani ?? "Text unavailable",
-                textIndopak: arVerse.textIndopak ?? arVerse.textUthmani ?? "Text unavailable",
-                translation: cleanTranslation
+                textUthmani: richUthmaniText,
+                textIndopak: richIndopakText,
+                translation: cleanTranslation,
+                searchableTranslation: cleanTranslation.lowercased(), // 🌟 THE FIX: Pre-compute the lowercase string once!
+                transliteration: transVerseText,
+                words: nil
             )
             loadedVerses.append(verse)
         }
@@ -287,11 +323,8 @@ struct MoodMapper {
     ]
 }
 
-// MARK: - LOCAL QURAN DATABASE MANAGER
 class LocalQuranManager: ObservableObject {
     @Published var verses: [JSONVerse] = []
-    
-    // 🌟 THE FIX: Renamed 'surahs' to 'chapters' to resolve the Xcode error!
     @Published var chapters: [SurahMetadata] = []
     
     init() {
@@ -309,23 +342,20 @@ class LocalQuranManager: ObservableObject {
             await MainActor.run {
                 self.chapters = newChapters
                 self.verses = newVerses
-                print("✅ Successfully verified and loaded \(self.chapters.count) Surahs and \(self.verses.count) Verses directly from Quran.com!")
             }
         } catch {
             print("❌ JSON Parsing Error: \(error)")
         }
     }
     
-    // MARK: - Search Helper (Smart Sentence Parsing & Randomized)
     func findVerses(for query: String) -> [JSONVerse] {
         let cleanQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if cleanQuery.isEmpty { return [] }
         
-        // 1. Check for Exact Match First
         if let mappedVerseKeys = MoodMapper.dictionary[cleanQuery] {
             return getShuffledMoodVerses(keys: mappedVerseKeys)
         }
         
-        // 2. Smart Sentence Parsing
         let words = cleanQuery.components(separatedBy: .whitespacesAndNewlines)
         for word in words {
             let cleanWord = word.trimmingCharacters(in: .punctuationCharacters)
@@ -334,15 +364,15 @@ class LocalQuranManager: ObservableObject {
             }
         }
         
-        // 3. Fallback to standard text search (Now safely checks both scripts)
+        // 🌟 THE FIX: Lightning fast search using the pre-computed lowercase string!
+        // Because Arabic letters don't have uppercase/lowercase, we can just use standard .contains()
         return verses.filter {
-            $0.translation.localizedCaseInsensitiveContains(cleanQuery) ||
-            $0.textUthmani.localizedCaseInsensitiveContains(cleanQuery) ||
-            $0.textIndopak.localizedCaseInsensitiveContains(cleanQuery)
+            $0.searchableTranslation.contains(cleanQuery) ||
+            $0.textUthmani.contains(cleanQuery) ||
+            $0.textIndopak.contains(cleanQuery)
         }
     }
     
-    // MARK: - Private Randomizer Helper
     private func getShuffledMoodVerses(keys: [String]) -> [JSONVerse] {
         let moodVerses = verses.filter { verse in
             let key = "\(verse.surahNumber):\(verse.verseNumber)"
@@ -351,7 +381,6 @@ class LocalQuranManager: ObservableObject {
         return moodVerses.shuffled()
     }
     
-    // UI Helper to Detect Mood for Banner
     func detectedMood(for query: String) -> String? {
         let cleanQuery = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         
@@ -369,6 +398,4 @@ class LocalQuranManager: ObservableObject {
         
         return nil
     }
-    
 }
-

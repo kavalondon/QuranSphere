@@ -15,6 +15,7 @@ struct SurahListView: View {
     
     @State private var searchText: String = ""
     @State private var selectedFilter: SurahFilter = .all
+    @FocusState private var isSearchFocused: Bool // 🌟 THE FIX: Track search focus state
     
     enum SurahFilter {
         case all, featured, favorites
@@ -38,11 +39,15 @@ struct SurahListView: View {
                     TextField("Search Surah name or number...", text: $searchText)
                         .font(.system(.body, design: .serif))
                         .foregroundColor(isDarkMode ? .white : .black)
+                        .focused($isSearchFocused) // 🌟 THE FIX: Bind focus state to TextField
                 }
                 .padding(12)
                 .background(cardColor)
                 .cornerRadius(12)
                 .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
+                .onTapGesture {
+                    isSearchFocused = true // 🌟 THE FIX: Force cursor to appear on the first tap
+                }
                 
                 HStack(spacing: 10) {
                     filterButton(title: "All", filter: .all)
@@ -231,7 +236,7 @@ struct SurahMetadataModel: Identifiable {
         SurahMetadataModel(id: 33, nameEN: "Al-Ahzab", nameAR: "الأحزاب", type: "Medinan", totalVerses: 73),
         SurahMetadataModel(id: 34, nameEN: "Saba'", nameAR: "سبأ", type: "Meccan", totalVerses: 54),
         SurahMetadataModel(id: 35, nameEN: "Fatir", nameAR: "فاطر", type: "Meccan", totalVerses: 45),
-        SurahMetadataModel(id: 36, nameEN: "Ya-Sin", nameAR: "يس", type: "Meccan", totalVerses: 83),
+        SurahMetadataModel(id: 36, nameEN: "Yaseen", nameAR: "يس", type: "Meccan", totalVerses: 83), // 🌟 THE FIX: Renamed from Ya-Sin to Yaseen
         SurahMetadataModel(id: 37, nameEN: "As-Saffat", nameAR: "الصافات", type: "Meccan", totalVerses: 182),
         SurahMetadataModel(id: 38, nameEN: "Sad", nameAR: "ص", type: "Meccan", totalVerses: 88),
         SurahMetadataModel(id: 39, nameEN: "Az-Zumar", nameAR: "الزمر", type: "Meccan", totalVerses: 75),

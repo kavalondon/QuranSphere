@@ -44,7 +44,8 @@ class PrayerTimesManager: ObservableObject {
     @Published var errorMessage: String?
     @Published var nextPrayerName: String?
     
-    private let cacheKey = "QuranSphere_CachedPrayerTimes"
+    // 🌟 THE FIX: Updated cache key to force a fresh pull with the accurate settings
+    private let cacheKey = "QuranSphere_CachedPrayerTimes_v2"
     
     func fetchPrayerTimes(for location: CLLocation, forceRefresh: Bool = false) async {
         isLoading = true
@@ -81,12 +82,27 @@ class PrayerTimesManager: ObservableObject {
             }
         }
         
-        // 3. AUTOPILOT LOGIC:
-        // If Autopilot is ON, we omit the method parameter. AlAdhan will automatically detect the best method for these coordinates.
-        // If Autopilot is OFF, we pass the user's manual method.
-        let methodParameter = isAutopilot ? "" : "&method=\(method)"
+        // 3. 🌟 THE FIX: AUTOPILOT & HIGH LATITUDE LOGIC
+        var methodParameter = ""
+        var highLatitudeParameter = ""
+        var tuneParameter = ""
         
-        let urlString = "https://api.aladhan.com/v1/timings/\(dateString)?latitude=\(lat)&longitude=\(lon)&school=\(school)\(methodParameter)"
+        if isAutopilot {
+            // Match Pillars exactly for UK & High Latitudes
+            // 15 = Moonsighting Committee Worldwide
+            methodParameter = "&method=15"
+            // 3 = Angle Based / Twilight Angle Rule
+            highLatitudeParameter = "&latitudeAdjustmentMethod=3"
+            // Custom Offsets: +5 mins Dhuhr, +3 mins Maghrib
+            tuneParameter = "&tune=0,0,0,5,0,3,0,0,0"
+        } else {
+            methodParameter = "&method=\(method)"
+            // Always apply a high latitude fallback so the API doesn't crash during UK summers
+            highLatitudeParameter = "&latitudeAdjustmentMethod=3"
+            tuneParameter = ""
+        }
+        
+        let urlString = "https://api.aladhan.com/v1/timings/\(dateString)?latitude=\(lat)&longitude=\(lon)&school=\(school)\(methodParameter)\(highLatitudeParameter)\(tuneParameter)"
         
         guard let url = URL(string: urlString) else {
             errorMessage = "Invalid URL constructed."

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct TahajjudGuideView: View {
     @AppStorage("isDarkMode") private var isDarkMode = false
+    @State private var expandedImage: String? = nil
     
     let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
     let accentGold = Color(red: 0.83, green: 0.67, blue: 0.51)
@@ -31,6 +32,31 @@ struct TahajjudGuideView: View {
                     benefitsSection
                 }
                 .padding(24)
+            }
+            
+            // Full-Screen Image Overlay
+            if let imageName = expandedImage {
+                ZStack {
+                    Color.black.opacity(0.8)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                expandedImage = nil
+                            }
+                        }
+                    
+                    Image(imageName)
+                        .resizable()
+                        .scaledToFit()
+                        .padding(24)
+                        .shadow(radius: 20)
+                        .onTapGesture {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                expandedImage = nil
+                            }
+                        }
+                }
+                .zIndex(1)
             }
         }
         .navigationTitle("Tahajjud Guide")
@@ -217,8 +243,8 @@ struct TahajjudGuideView: View {
                     
                     Image(imageName)
                         .resizable()
-                        .scaledToFit()
-                        .padding(8)
+                        .scaledToFill()
+                        .frame(maxWidth: .infinity, maxHeight: 140)
                 }
                 .frame(height: 140)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -226,6 +252,11 @@ struct TahajjudGuideView: View {
                     RoundedRectangle(cornerRadius: 12)
                         .stroke(themeColor.opacity(isDarkMode ? 0.2 : 0.15), lineWidth: 1)
                 )
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        expandedImage = imageName
+                    }
+                }
             }
         }
         .padding(24)

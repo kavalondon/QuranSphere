@@ -58,9 +58,9 @@ struct PrayerGuideListView: View {
                             menuCard(title: "How to Perform Salah", icon: "figure.mind.and.body", color: accentGold)
                         }
                         
-                        NavigationLink(destination: Text("Surahs Coming Soon")) {
-                            menuCard(title: "Short Qur'anic Chapters", icon: "book.fill", color: sageGreen)
-                        }
+                       // NavigationLink(destination: Text("Surahs Coming Soon")) {
+                         //   menuCard(title: "Short Qur'anic Chapters", icon: "book.fill", color: sageGreen)
+                        //}
                     }
                     .padding(.horizontal, 24)
                 }
