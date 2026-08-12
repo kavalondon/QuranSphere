@@ -1,0 +1,1 @@
+This Quran application respects your privacy. We do not collect, store, or share any personal user data. All reading progress, bookmarks, preferences, and settings are stored locally on your device using native storage.
