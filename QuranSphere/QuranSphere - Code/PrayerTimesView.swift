@@ -12,185 +12,213 @@ struct PrayerTimesView: View {
     
     var location: CLLocation?
     
-    @State private var showSettings = false // 🌟 Controls the settings sheet
+    @State private var showSettings = false
+    @State private var currentDate = Date() // Allows toggling days like the reference layout
     
     let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
     let accentGold = Color(red: 0.83, green: 0.67, blue: 0.51)
     
-    let dummyTimings = PrayerTimings(Fajr: "04:30", Sunrise: "06:00", Dhuhr: "13:00", Asr: "16:45", Maghrib: "20:00", Isha: "21:30")
+    let dummyTimings = PrayerTimings(Fajr: "03:57", Sunrise: "05:42", Dhuhr: "13:19", Asr: "18:21", Maghrib: "20:47", Isha: "21:51")
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        ZStack {
+            // Background color matching your app theme
+            (isDarkMode ? Color(red: 0.10, green: 0.12, blue: 0.11) : Color(red: 0.97, green: 0.97, blue: 0.95))
+                .ignoresSafeArea()
             
-            // HStack to place the Settings gear icon next to the title
-            HStack {
-                Text("Daily Prayers")
-                    .font(.system(.title3, design: .serif))
-                    .fontWeight(.bold)
-                    .foregroundColor(isDarkMode ? .white : Color(red: 0.2, green: 0.2, blue: 0.2))
-                
-                Spacer()
-                
-                Button(action: {
-                    showSettings = true
-                }) {
-                    Image(systemName: "slider.horizontal.3") // Elegant settings icon
-                        .font(.system(size: 18))
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 24) {
+                    
+                    // MARK: - TOP HEADER (Next Prayer & Status)
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(prayerManager.nextPrayerName ?? "Dhuhr")
+                                    .font(.system(size: 32, weight: .bold, design: .serif))
+                                    .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
+                                
+                                Text("3 hrs 44 mins until next")
+                                    .font(.system(.subheadline, design: .rounded))
+                                    .foregroundColor(.gray)
+                            }
+                            
+                            Spacer()
+                            
+                            // Settings Button
+                            Button(action: { showSettings = true }) {
+                                Image(systemName: "gearshape")
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(sageGreen)
+                                    .padding(10)
+                                    .background(sageGreen.opacity(0.12))
+                                    .clipShape(Circle())
+                            }
+                        }
+                        
+                        // Location & Date Pill Badge
+                        HStack(spacing: 6) {
+                            Text("TODAY")
+                                .font(.system(size: 10, weight: .bold, design: .rounded))
+                            Text("|")
+                            Image(systemName: "location.fill")
+                                .font(.system(size: 10))
+                            Text("Rochdale")
+                        }
+                        .font(.system(.caption, design: .rounded))
                         .foregroundColor(sageGreen)
-                        .padding(8)
-                        .background(sageGreen.opacity(0.12))
-                        .clipShape(Circle())
-                }
-            }
-            .padding(.horizontal, 24)
-            // Show the settings sheet and refresh times when dismissed
-            .sheet(isPresented: $showSettings, onDismiss: {
-                if let location = location {
-                    Task {
-                        // Force refresh so Asr times update instantly if changed
-                        await prayerManager.fetchPrayerTimes(for: location, forceRefresh: true)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(sageGreen.opacity(0.1))
+                        .clipShape(Capsule())
+                        .padding(.top, 4)
                     }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 12)
+                    
+                    // MARK: - DATE SELECTOR BAR
+                    HStack {
+                        Button(action: { changeDay(by: -1) }) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(isDarkMode ? .white : .black)
+                        }
+                        
+                        Spacer()
+                        
+                        VStack(spacing: 2) {
+                            Text(formattedDate(currentDate))
+                                .font(.system(.headline, design: .serif))
+                                .fontWeight(.bold)
+                                .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
+                            
+                            Text("29 Safar 1448") // Hijri estimation placeholder or dynamic string
+                                .font(.system(.caption, design: .rounded))
+                                .foregroundColor(accentGold)
+                        }
+                        
+                        Spacer()
+                        
+                        Button(action: { changeDay(by: 1) }) {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(isDarkMode ? .white : .black)
+                        }
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
+                    .background(isDarkMode ? Color.white.opacity(0.04) : Color.white)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.02), radius: 8, x: 0, y: 3)
+                    .padding(.horizontal, 20)
+                    
+                    // MARK: - PRAYER TIMES LIST CARD
+                    let displayTimings = prayerManager.timings ?? dummyTimings
+                    let isSkeleton = prayerManager.isLoading && prayerManager.timings == nil
+                    
+                    VStack(spacing: 0) {
+                        PrayerRowNew(name: "Fajr", time: prayerManager.to12Hour(time: displayTimings.Fajr), isActive: prayerManager.nextPrayerName == "Fajr", isLast: false, sageGreen: sageGreen, accentGold: accentGold, isDarkMode: isDarkMode)
+                        PrayerRowNew(name: "Sunrise", time: prayerManager.to12Hour(time: displayTimings.Sunrise), isActive: prayerManager.nextPrayerName == "Sunrise", isLast: false, sageGreen: sageGreen, accentGold: accentGold, isDarkMode: isDarkMode)
+                        PrayerRowNew(name: "Dhuhr", time: prayerManager.to12Hour(time: displayTimings.Dhuhr), isActive: prayerManager.nextPrayerName == "Dhuhr", isLast: false, sageGreen: sageGreen, accentGold: accentGold, isDarkMode: isDarkMode)
+                        PrayerRowNew(name: "Asr", time: prayerManager.to12Hour(time: displayTimings.Asr), isActive: prayerManager.nextPrayerName == "Asr", isLast: false, sageGreen: sageGreen, accentGold: accentGold, isDarkMode: isDarkMode)
+                        PrayerRowNew(name: "Maghrib", time: prayerManager.to12Hour(time: displayTimings.Maghrib), isActive: prayerManager.nextPrayerName == "Maghrib", isLast: false, sageGreen: sageGreen, accentGold: accentGold, isDarkMode: isDarkMode)
+                        PrayerRowNew(name: "Isha", time: prayerManager.to12Hour(time: displayTimings.Isha), isActive: prayerManager.nextPrayerName == "Isha", isLast: true, sageGreen: sageGreen, accentGold: accentGold, isDarkMode: isDarkMode)
+                    }
+                    .padding(16)
+                    .background(isDarkMode ? Color(red: 0.12, green: 0.12, blue: 0.12) : .white)
+                    .cornerRadius(24)
+                    .shadow(color: Color.black.opacity(isDarkMode ? 0.3 : 0.04), radius: 15, x: 0, y: 6)
+                    .padding(.horizontal, 20)
+                    .redacted(reason: isSkeleton ? .placeholder : [])
+                    
+                    Spacer(minLength: 40)
                 }
-            }) {
-                PrayerSettingsView()
             }
-            
-            if let error = prayerManager.errorMessage, prayerManager.timings == nil {
-                Text(error)
-                    .foregroundColor(.red)
-                    .font(.system(.subheadline))
-                    .multilineTextAlignment(.center)
-                    .padding()
-            } else {
-                let displayTimings = prayerManager.timings ?? dummyTimings
-                let isSkeleton = prayerManager.isLoading && prayerManager.timings == nil
-                
-                VStack(spacing: 0) {
-                    PrayerRow(name: "Fajr", time: prayerManager.to12Hour(time: displayTimings.Fajr), icon: "sun.and.horizon.fill", isActive: prayerManager.nextPrayerName == "Fajr", isLast: false)
-                    PrayerRow(name: "Sunrise", time: prayerManager.to12Hour(time: displayTimings.Sunrise), icon: "sunrise.fill", isActive: prayerManager.nextPrayerName == "Sunrise", isLast: false)
-                    PrayerRow(name: "Dhuhr", time: prayerManager.to12Hour(time: displayTimings.Dhuhr), icon: "sun.max.fill", isActive: prayerManager.nextPrayerName == "Dhuhr", isLast: false)
-                    PrayerRow(name: "Asr", time: prayerManager.to12Hour(time: displayTimings.Asr), icon: "sun.min.fill", isActive: prayerManager.nextPrayerName == "Asr", isLast: false)
-                    PrayerRow(name: "Maghrib", time: prayerManager.to12Hour(time: displayTimings.Maghrib), icon: "sunset.fill", isActive: prayerManager.nextPrayerName == "Maghrib", isLast: false)
-                    PrayerRow(name: "Isha", time: prayerManager.to12Hour(time: displayTimings.Isha), icon: "moon.stars.fill", isActive: prayerManager.nextPrayerName == "Isha", isLast: true)
-                }
-                .background(isDarkMode ? Color(red: 0.12, green: 0.12, blue: 0.12) : .white)
-                .cornerRadius(24)
-                .shadow(color: Color.black.opacity(isDarkMode ? 0.3 : 0.04), radius: 15, x: 0, y: 6)
-                .padding(.horizontal, 20)
-                .redacted(reason: isSkeleton ? .placeholder : [])
-                .animation(.easeInOut(duration: 0.4), value: isSkeleton)
+        }
+        .sheet(isPresented: $showSettings, onDismiss: {
+            if let location = location {
+                Task { await prayerManager.fetchPrayerTimes(for: location, forceRefresh: true) }
             }
+        }) {
+            PrayerSettingsView()
         }
         .onChange(of: location) { newLocation in
             if let newLocation = newLocation {
                 Task { await prayerManager.fetchPrayerTimes(for: newLocation) }
             }
         }
-        // 🌟 ADDED: Listen for changes in timings to trigger notifications
-        .onChange(of: prayerManager.timings?.Fajr) { _ in
-            if let timings = prayerManager.timings {
-                scheduleNotifications(for: timings)
-            }
-        }
         .onAppear {
             if let location = location {
                 Task { await prayerManager.fetchPrayerTimes(for: location) }
             }
-            // Ask for notification permissions if they haven't been granted yet
             PrayerNotificationManager.shared.requestPermission()
         }
     }
     
-    // MARK: - 🌟 ADDED: Notification Scheduling Logic
-    private func scheduleNotifications(for timings: PrayerTimings) {
-        let manager = PrayerNotificationManager.shared
-        manager.clearAllScheduledNotifications()
-        
-        // Helper to convert "HH:mm" strings to actual Date objects for today
-        func dateFrom(timeString: String) -> Date? {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "HH:mm"
-            
-            guard let parsedTime = formatter.date(from: timeString) else { return nil }
-            
-            let calendar = Calendar.current
-            let timeComponents = calendar.dateComponents([.hour, .minute], from: parsedTime)
-            
-            return calendar.date(bySettingHour: timeComponents.hour ?? 0,
-                                 minute: timeComponents.minute ?? 0,
-                                 second: 0,
-                                 of: Date())
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE d MMMM"
+        return formatter.string(from: date)
+    }
+    
+    private func changeDay(by value: Int) {
+        if let newDate = Calendar.current.date(byAdding: .day, value: value, to: currentDate) {
+            currentDate = newDate
         }
-        
-        // Schedule each prayer if the date conversion is successful
-        if let fajr = dateFrom(timeString: timings.Fajr) { manager.scheduleNotification(for: "Fajr", at: fajr) }
-        if let dhuhr = dateFrom(timeString: timings.Dhuhr) { manager.scheduleNotification(for: "Dhuhr", at: dhuhr) }
-        if let asr = dateFrom(timeString: timings.Asr) { manager.scheduleNotification(for: "Asr", at: asr) }
-        if let maghrib = dateFrom(timeString: timings.Maghrib) { manager.scheduleNotification(for: "Maghrib", at: maghrib) }
-        if let isha = dateFrom(timeString: timings.Isha) { manager.scheduleNotification(for: "Isha", at: isha) }
     }
 }
 
-// Updated Reusable Subview supporting highlighting
-struct PrayerRow: View {
+// MARK: - Refactored Clean Prayer Row matching the Reference Layout Style
+struct PrayerRowNew: View {
     let name: String
     let time: String
-    let icon: String
-    let isActive: Bool // Triggers the dynamic highlighting
+    let isActive: Bool
     let isLast: Bool
+    let sageGreen: Color
+    let accentGold: Color
+    let isDarkMode: Bool
     
-    @AppStorage("isDarkMode") private var isDarkMode = false
-    
-    let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
-    let accentGold = Color(red: 0.83, green: 0.67, blue: 0.51)
+    @State private var isMuted = false
     
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 18) {
-                // Soft tinted circular background for the icon
-                ZStack {
-                    Circle()
-                        .fill(isActive ? accentGold.opacity(0.18) : sageGreen.opacity(0.12))
-                        .frame(width: 44, height: 44)
-                    
-                    Image(systemName: icon)
-                        .foregroundColor(isActive ? accentGold : sageGreen)
-                        .font(.system(size: 18, weight: .medium))
-                        // Gentle pulse animation if it's the next prayer
-                        .scaleEffect(isActive ? 1.08 : 1.0)
-                        .animation(isActive ? Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true) : .default, value: isActive)
-                }
-                
+            HStack {
                 Text(name)
                     .font(.system(.headline, design: .serif))
-                    .foregroundColor(isDarkMode ? .white : Color(red: 0.2, green: 0.2, blue: 0.2))
-                
-                if isActive {
-                    Text("Next")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .foregroundColor(accentGold)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(accentGold.opacity(0.15))
-                        .cornerRadius(4)
-                }
+                    .fontWeight(isActive ? .bold : .medium)
+                    .foregroundColor(isActive ? (isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20)) : (isDarkMode ? .white.opacity(0.7) : .black.opacity(0.7)))
                 
                 Spacer()
                 
                 Text(time)
                     .font(.system(.headline, design: .rounded))
-                    .fontWeight(.semibold)
+                    .fontWeight(isActive ? .bold : .semibold)
                     .foregroundColor(isActive ? accentGold : (isDarkMode ? Color.white.opacity(0.8) : Color.black.opacity(0.6)))
+                
+                // Notification Bell Toggle Button matching the reference image layout
+                Button(action: { isMuted.toggle() }) {
+                    Image(systemName: isMuted ? "bell.slash.fill" : "bell.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(isMuted ? .gray.opacity(0.4) : sageGreen)
+                        .padding(.leading, 12)
+                }
             }
             .padding(.vertical, 14)
             .padding(.horizontal, 16)
-            .background(isActive ? accentGold.opacity(0.04) : Color.clear)
+            // Active prayer outlined selection border like the reference image
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(isActive ? (isDarkMode ? Color.white.opacity(0.05) : sageGreen.opacity(0.05)) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(isActive ? sageGreen : Color.clear, lineWidth: 1.5)
+            )
             
             if !isLast {
                 Divider()
-                    .padding(.leading, 78)
-                    .padding(.trailing, 16)
-                    .opacity(0.7)
+                    .padding(.horizontal, 16)
+                    .opacity(isDarkMode ? 0.1 : 0.4)
+                    .padding(.vertical, 2)
             }
         }
     }

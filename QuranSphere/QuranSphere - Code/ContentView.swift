@@ -83,7 +83,6 @@ struct ContentView: View {
                 let _ = quranManager.verses.count
             }
         }
-        // 🌟 ADDED: Listens for the widget tap
         .onOpenURL { url in
             if url.absoluteString.contains("qibla") || url.host == "qibla" {
                 activeTab = .qibla
@@ -106,7 +105,7 @@ extension ContentView {
             comfortVerseSection
             progressDashboard
             quickLinksGrid
-            GuidesSectionView()
+            learningAreaButton
         }
     }
     
@@ -268,7 +267,7 @@ extension ContentView {
             }.buttonStyle(PlainButtonStyle())
             
             NavigationLink(destination: DailyDuasView()) {
-                pageCard(title: "Daily Duas", icon: "sparkles", bgColor: Color(red: 0.52, green: 0.61, blue: 0.56))
+                pageCard(title: "Daily Duas", icon: "hands.sparkles.fill", bgColor: Color(red: 0.52, green: 0.61, blue: 0.56))
             }
             .buttonStyle(PlainButtonStyle())
             
@@ -277,20 +276,55 @@ extension ContentView {
             }.buttonStyle(PlainButtonStyle())
             
             NavigationLink(destination: SurahListView(showFavoritesOnly: true)) {
-                pageCard(title: "Favourite Surahs", icon: "star.fill", bgColor: Color(red: 0.83, green: 0.67, blue: 0.51))
+                pageCard(title: "Favourite Surahs", icon: "heart.fill", bgColor: Color(red: 0.83, green: 0.67, blue: 0.51), iconColor: .red)
             }.buttonStyle(PlainButtonStyle())
         }
+        .padding(.horizontal, 24)
+    }
+    
+    // 5. Guides & Learning Big Button
+    private var learningAreaButton: some View {
+        NavigationLink(destination: LearningAreaContainerView(isDarkMode: isDarkMode)) {
+            HStack(spacing: 16) {
+                Image(systemName: "books.vertical.fill")
+                    .font(.system(size: 28))
+                    .foregroundColor(.white)
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Guides & Learning")
+                        .font(.system(.title3, design: .serif)).bold()
+                        .foregroundColor(.white)
+                    
+                    Text("Explore all topics, cards, and resources")
+                        .font(.system(.subheadline, design: .serif))
+                        .foregroundColor(.white.opacity(0.8))
+                }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.8))
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity)
+            .background(Color(red: 0.38, green: 0.48, blue: 0.43))
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
         .padding(.horizontal, 24)
     }
 }
 
 // MARK: - Helpers
 extension ContentView {
-    private func pageCard(title: String, icon: String, bgColor: Color) -> some View {
+    private func pageCard(title: String, icon: String, bgColor: Color, iconColor: Color = .white) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(.white)
+                .foregroundColor(iconColor)
             Spacer()
             Text(title)
                 .font(.system(.body, design: .serif)).bold()
@@ -505,5 +539,33 @@ struct QuranSearchManager {
         }
         
         return matchedText.randomElement() ?? allVerses.randomElement()
+    }
+}
+
+// MARK: - Learning Area Destination View
+struct LearningAreaContainerView: View {
+    var isDarkMode: Bool
+    
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            Group {
+                if isDarkMode {
+                    Color(red: 0.10, green: 0.12, blue: 0.11)
+                } else {
+                    Color(red: 0.97, green: 0.97, blue: 0.95)
+                }
+            }
+            .ignoresSafeArea()
+            
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 28) {
+                    GuidesSectionView()
+                }
+                .padding(.top, 16)
+                .padding(.bottom, 100)
+            }
+        }
+        .navigationTitle("Guides & Learning")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }
