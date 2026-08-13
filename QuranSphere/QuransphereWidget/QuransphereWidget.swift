@@ -110,7 +110,7 @@ struct QuransphereWidgetEntryView : View {
                 }
             }
         }
-        // 🌟 ADDED: Deep Link URL
+        // 🌟 ADDED: Tells the widget what URL to open when tapped
         .widgetURL(URL(string: "quransphere://qibla"))
     }
 }
@@ -142,6 +142,7 @@ struct MiniPrayerColumn: View {
         }
     }
 }
+
 // 5. Configuration
 struct QuransphereWidget: Widget {
     let kind: String = "QuransphereWidget"

@@ -23,7 +23,7 @@ struct GuidesSectionView: View {
     let howToGuides = [
         GuideCard(title: "Prayer Guide", subtitle: "The Second Pillar", icon: "book.pages.fill", color: Color(red: 0.83, green: 0.67, blue: 0.51)),
         GuideCard(title: "Tahajjud", subtitle: "The Night Prayer", icon: "moon.stars.fill", color: Color(red: 0.38, green: 0.48, blue: 0.43)),
-        //GuideCard(title: "Making Dua", subtitle: "Etiquette & Sunnah", icon: "hands.sparkles.fill", color: Color(red: 0.83, green: 0.67, blue: 0.51)),
+        GuideCard(title: "Istikhara", subtitle: "Seeking Guidance", icon: "hands.sparkles.fill", color: Color(red: 0.83, green: 0.67, blue: 0.51))
         //GuideCard(title: "Dhikr", subtitle: "After the prayer", icon: "sparkles", color: Color(red: 0.52, green: 0.61, blue: 0.56))
     ]
     
@@ -46,6 +46,11 @@ struct GuidesSectionView: View {
                             .buttonStyle(PlainButtonStyle())
                         } else if guide.title == "Prayer Guide" {
                             NavigationLink(destination: PrayerGuideListView()) {
+                                howToCard(guide: guide)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        } else if guide.title == "Istikhara" {
+                            NavigationLink(destination: IstikharaGuideView()) {
                                 howToCard(guide: guide)
                             }
                             .buttonStyle(PlainButtonStyle())

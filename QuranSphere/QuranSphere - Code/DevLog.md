@@ -286,3 +286,24 @@ Module: QuransphereWidget & QiblaCompassView
 • Adhaan Notifications: Implement UNUserNotificationCenter to schedule local notifications when prayer times arrive.
 • Audio Trimming: Crop the Adhaan .wav file to meet Apple's strict 30-second limit for custom notification alerts.
 • App Group Integration: Set up the paid Apple Developer account to enable App Groups, allowing the main app's live Aladhan data to feed directly into the widget target.
+
+
+
+***
+
+🚀 Devlog: Session Update Summary
+•    Qibla Compass & Navigation Improvements
+•    Dynamic Direction Text: Implemented real-time dynamic instruction text ("Turn to your left", "Turn to your right", "You're facing Makkah") that updates smoothly based on the user's continuous compass heading.
+•    Interactive Sliding Toggle: Enhanced the sliding tab toggle with .contentShape(Rectangle()) and smooth spring animations to make switching between the Qibla Compass and Prayer Times instantaneous and responsive on the first tap.
+•    Widget Deep-Linking: Added a .widgetURL(URL(string: "quransphere://qibla")) to the Prayer Times widget and configured .onOpenURL inside ContentView to ensure tapping the home screen widget routes the user directly to the Qibla tab.
+•    Guides & Learning Section
+•    Istikhara Guide: Added a brand-new, comprehensive Istikhara guide card to the homepage (GuidesSectionView) routing to a dedicated detail view (IstikharaGuideView).
+•    Structured Content & Minimalist UI: Styled the Istikhara guide using the app's core design system (custom card modifiers, breathing room, clear step-by-step UI markers, and dedicated split cards for Arabic text, transliteration, and English translation).
+•    Prayer Notifications & Background Management
+•    Local Notification System: Built PrayerNotificationManager utilizing UserNotifications to automatically schedule and handle local alerts for all 5 daily prayers.
+•    Automatic Sync: Integrated notification scheduling directly into PrayerTimesView so that alerts update dynamically whenever prayer times are calculated or refreshed.
+•    Quran Reader UI & Text Cleanup
+•    Minimalist Card Redesign: Updated QuranReaderView to unify the Arabic text and English translation into a single, cohesive container card with clean shadows, matching the app's minimalist home dashboard aesthetic.
+•    Advanced Footnote Sanitizer: Upgraded the translation cleaner function with robust Unicode regular expressions ([\p{L}\.,]\d+) to completely strip out annoying inline footnote numbers attached to words and punctuation.
+
+

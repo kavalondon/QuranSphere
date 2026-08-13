@@ -55,6 +55,8 @@
 		5ED0BA34302D817A00917140 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5ED0B9FB302D26BE00917140 /* SwiftUI.framework */; };
 		5ED0BA43302D817C00917140 /* QuransphereWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5ED0BA32302D817A00917140 /* QuransphereWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		5ED0BA48302D818E00917140 /* Color+Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E854D82300C55AA00E627E6 /* Color+Palette.swift */; };
+		5ED0BA4A302DB9BB00917140 /* IstikharaGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED0BA49302DB9B900917140 /* IstikharaGuideView.swift */; };
+		5ED0BA4C302DBCC200917140 /* PrayerNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED0BA4B302DBCC000917140 /* PrayerNotificationManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -145,6 +147,8 @@
 		5ED0B9F9302D26BE00917140 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		5ED0B9FB302D26BE00917140 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		5ED0BA32302D817A00917140 /* QuransphereWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QuransphereWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		5ED0BA49302DB9B900917140 /* IstikharaGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IstikharaGuideView.swift; sourceTree = "<group>"; };
+		5ED0BA4B302DBCC000917140 /* PrayerNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrayerNotificationManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -240,6 +244,8 @@
 		5E854DA5300C564F00E627E6 /* QuranSphere - Code */ = {
 			isa = PBXGroup;
 			children = (
+				5ED0BA4B302DBCC000917140 /* PrayerNotificationManager.swift */,
+				5ED0BA49302DB9B900917140 /* IstikharaGuideView.swift */,
 				5ED0B9ED302CBCE100917140 /* RichQuranVerse.swift */,
 				5ECB33A73023781200E195A1 /* DuaDetailView.swift */,
 				5ECB33A5302377F700E195A1 /* DailyDuasView.swift */,
@@ -502,6 +508,7 @@
 				5E854D95300C55AA00E627E6 /* LocalQuranManager.swift in Sources */,
 				5ECB33A23023707100E195A1 /* NotificationSettingsView.swift in Sources */,
 				5E854D96300C55AA00E627E6 /* QiblaCompassManager.swift in Sources */,
+				5ED0BA4C302DBCC200917140 /* PrayerNotificationManager.swift in Sources */,
 				5ED0B9EE302CBCE600917140 /* RichQuranVerse.swift in Sources */,
 				5E854D97300C55AA00E627E6 /* QiblaCompassView.swift in Sources */,
 				5ECB339E30236CDF00E195A1 /* PrayerSettingsView.swift in Sources */,
@@ -520,6 +527,7 @@
 				5E854D9C300C55AA00E627E6 /* QiblaManager.swift in Sources */,
 				5E14953A30127395003D68DC /* PrayerGuideListView.swift in Sources */,
 				5E854D9D300C55AA00E627E6 /* MoodBannerView.swift in Sources */,
+				5ED0BA4A302DB9BB00917140 /* IstikharaGuideView.swift in Sources */,
 				5E149530300DA47A003D68DC /* BookmarksView.swift in Sources */,
 				5ECB33A83023781500E195A1 /* DuaDetailView.swift in Sources */,
 				5E854D9E300C55AA00E627E6 /* QuranReaderView.swift in Sources */,

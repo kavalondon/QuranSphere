@@ -12,7 +12,7 @@ struct PrayerTimesView: View {
     
     var location: CLLocation?
     
-    @State private var showSettings = false // 🌟 ADDED: Controls the settings sheet
+    @State private var showSettings = false // 🌟 Controls the settings sheet
     
     let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
     let accentGold = Color(red: 0.83, green: 0.67, blue: 0.51)
@@ -22,7 +22,7 @@ struct PrayerTimesView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             
-            // 🌟 ADDED: HStack to place the Settings gear icon next to the title
+            // HStack to place the Settings gear icon next to the title
             HStack {
                 Text("Daily Prayers")
                     .font(.system(.title3, design: .serif))
@@ -43,7 +43,7 @@ struct PrayerTimesView: View {
                 }
             }
             .padding(.horizontal, 24)
-            // 🌟 ADDED: Show the new settings sheet and refresh times when dismissed
+            // Show the settings sheet and refresh times when dismissed
             .sheet(isPresented: $showSettings, onDismiss: {
                 if let location = location {
                     Task {
@@ -86,15 +86,52 @@ struct PrayerTimesView: View {
                 Task { await prayerManager.fetchPrayerTimes(for: newLocation) }
             }
         }
+        // 🌟 ADDED: Listen for changes in timings to trigger notifications
+        .onChange(of: prayerManager.timings?.Fajr) { _ in
+            if let timings = prayerManager.timings {
+                scheduleNotifications(for: timings)
+            }
+        }
         .onAppear {
             if let location = location {
                 Task { await prayerManager.fetchPrayerTimes(for: location) }
             }
+            // Ask for notification permissions if they haven't been granted yet
+            PrayerNotificationManager.shared.requestPermission()
         }
+    }
+    
+    // MARK: - 🌟 ADDED: Notification Scheduling Logic
+    private func scheduleNotifications(for timings: PrayerTimings) {
+        let manager = PrayerNotificationManager.shared
+        manager.clearAllScheduledNotifications()
+        
+        // Helper to convert "HH:mm" strings to actual Date objects for today
+        func dateFrom(timeString: String) -> Date? {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "HH:mm"
+            
+            guard let parsedTime = formatter.date(from: timeString) else { return nil }
+            
+            let calendar = Calendar.current
+            let timeComponents = calendar.dateComponents([.hour, .minute], from: parsedTime)
+            
+            return calendar.date(bySettingHour: timeComponents.hour ?? 0,
+                                 minute: timeComponents.minute ?? 0,
+                                 second: 0,
+                                 of: Date())
+        }
+        
+        // Schedule each prayer if the date conversion is successful
+        if let fajr = dateFrom(timeString: timings.Fajr) { manager.scheduleNotification(for: "Fajr", at: fajr) }
+        if let dhuhr = dateFrom(timeString: timings.Dhuhr) { manager.scheduleNotification(for: "Dhuhr", at: dhuhr) }
+        if let asr = dateFrom(timeString: timings.Asr) { manager.scheduleNotification(for: "Asr", at: asr) }
+        if let maghrib = dateFrom(timeString: timings.Maghrib) { manager.scheduleNotification(for: "Maghrib", at: maghrib) }
+        if let isha = dateFrom(timeString: timings.Isha) { manager.scheduleNotification(for: "Isha", at: isha) }
     }
 }
 
-// 🌟 Updated Reusable Subview supporting highlighting
+// Updated Reusable Subview supporting highlighting
 struct PrayerRow: View {
     let name: String
     let time: String

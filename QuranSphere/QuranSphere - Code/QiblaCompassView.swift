@@ -41,6 +41,39 @@ struct QiblaCompassView: View {
         return alignmentDifference < 2.0
     }
     
+    // MARK: - Dynamic Direction Text
+    private var dynamicDirectionText: some View {
+        // Normalize the difference to a 0-360 range to easily determine left vs. right
+        let diff = (compassManager.qiblaDirection - compassManager.heading).truncatingRemainder(dividingBy: 360)
+        let normalizedDiff = diff < 0 ? diff + 360 : diff
+        
+        let baseFont = Font.system(size: 26, weight: .medium, design: .default)
+        let highlightFont = Font.system(size: 26, weight: .bold, design: .default)
+        
+        if isAligned {
+            return Text("You're facing ")
+                .font(baseFont)
+                .foregroundColor(.gray)
+            + Text("Makkah")
+                .font(highlightFont)
+                .foregroundColor(accentGold)
+        } else if normalizedDiff > 0 && normalizedDiff <= 180 {
+            return Text("Turn to your ")
+                .font(baseFont)
+                .foregroundColor(.gray)
+            + Text("right")
+                .font(highlightFont)
+                .foregroundColor(isDarkMode ? .white : .black)
+        } else {
+            return Text("Turn to your ")
+                .font(baseFont)
+                .foregroundColor(.gray)
+            + Text("left")
+                .font(highlightFont)
+                .foregroundColor(isDarkMode ? .white : .black)
+        }
+    }
+    
     var body: some View {
         VStack(spacing: 24) {
             
@@ -86,7 +119,10 @@ struct QiblaCompassView: View {
             // Only trigger if they are tapping a new tab
             if selectedTab != tab {
                 selectionFeedback.selectionChanged()
-                selectedTab = tab
+                // Wrap in explicit animation for a smoother slide
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                    selectedTab = tab
+                }
             }
         }) {
             Text(title)
@@ -95,6 +131,7 @@ struct QiblaCompassView: View {
                 .foregroundColor(selectedTab == tab ? .white : (isDarkMode ? .gray : .gray))
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
+                .contentShape(Rectangle()) // 🌟 THE FIX: Makes the whole area tappable, not just the text!
                 .background(
                     ZStack {
                         if selectedTab == tab {
@@ -229,6 +266,10 @@ struct QiblaCompassView: View {
                     }
                 }
                 
+                // 🌟 INJECTED DYNAMIC TEXT 🌟
+                dynamicDirectionText
+                    .padding(.top, 24)
+                
             } else {
                 // Permissions UI
                 VStack(spacing: 16) {
@@ -265,7 +306,6 @@ struct QiblaCompassView: View {
     // MARK: - Page 2: Original Prayer Times View
     private var prayersPage: some View {
         VStack {
-            // 🌟 Exactly your original injection!
             PrayerTimesView(location: compassManager.lastLocation)
                 .padding(.top, 8)
         }

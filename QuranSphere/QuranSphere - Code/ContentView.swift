@@ -83,6 +83,16 @@ struct ContentView: View {
                 let _ = quranManager.verses.count
             }
         }
+        // 🌟 ADDED: Listens for the widget tap
+        .onOpenURL { url in
+            if url.absoluteString.contains("qibla") || url.host == "qibla" {
+                activeTab = .qibla
+            } else if url.absoluteString.contains("settings") || url.host == "settings" {
+                activeTab = .settings
+            } else {
+                activeTab = .home
+            }
+        }
     }
 }
 

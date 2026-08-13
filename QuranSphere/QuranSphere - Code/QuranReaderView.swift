@@ -15,7 +15,7 @@ struct QuranReaderView: View {
     @AppStorage("lastReadVerse") private var lastReadVerse = 1
     @AppStorage("readingProgress") private var readingProgress: Double = 0.0
     
-    // Feature Storage: Bookmarks & Favorites (stored as comma-separated integers)
+    // Feature Storage: Bookmarks & Favorites
     @AppStorage("bookmarkedVerseIDs") private var bookmarkedVerseIDsStr: String = ""
     @AppStorage("favoriteSurahIDs") private var favoriteSurahIDsStr: String = ""
     
@@ -35,11 +35,19 @@ struct QuranReaderView: View {
     
     let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
     
-    // Clean Translation Helper: Removes trailing footnote numbers
     private func cleanTranslationText(_ rawText: String) -> String {
-        let noTags = rawText.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
-        let cleaned = noTags.replacingOccurrences(of: "\\.\\s*\\d+$", with: ".", options: .regularExpression)
-        return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+        var text = rawText.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+        
+        // 1. Remove any digit attached immediately after a period, comma, or letter (e.g., ".2", ".3", "wombs.3", "Merciful.2")
+        text = text.replacingOccurrences(of: "([\\p{L}\\.,])\\d+", with: "$1", options: .regularExpression)
+        
+        // 2. Remove any remaining isolated digits or bracketed footnote numbers like [1] or (2)
+        text = text.replacingOccurrences(of: "\\[\\d+\\]|\\(\\d+\\)|\\b\\d+\\b", with: "", options: .regularExpression)
+        
+        // 3. Clean up any leftover double spaces or awkward punctuation gaps
+        text = text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+        
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
     var body: some View {
@@ -61,21 +69,45 @@ struct QuranReaderView: View {
                     headerSection
                     
                     ScrollView(showsIndicators: false) {
-                        VStack(spacing: 0) {
-                            Spacer().frame(height: 24)
+                        VStack(spacing: 20) {
+                            Spacer().frame(height: 12)
                             
-                            verseCard(verse: surahVerses[currentVerseIndex])
+                            // UNIFIED READING CARD (Arabic + Translation inside one clean container)
+                            VStack(spacing: 24) {
+                                verseHeader
+                                
+                                Text(surahVerses[currentVerseIndex].arabicText(for: preferredScript))
+                                    .font(.custom(arabicFont, size: arabicFontSize))
+                                    .multilineTextAlignment(.center)
+                                    .baselineOffset(10)
+                                    .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
+                                    .frame(maxWidth: .infinity, minHeight: 120)
+                                    .padding(.vertical, 8)
+                                    .id(arabicFont + preferredScript + "\(surahVerses[currentVerseIndex].id)")
+                                    .onAppear {
+                                        GamificationManager.shared.logVerseRead(arabicText: surahVerses[currentVerseIndex].arabicText(for: preferredScript))
+                                    }
+                                
+                                Divider()
+                                    .opacity(0.4)
+                                    .padding(.horizontal, 12)
+                                
+                                Text(cleanTranslationText(surahVerses[currentVerseIndex].translation))
+                                    .font(.system(size: translationFontSize, weight: .medium, design: .serif))
+                                    .foregroundColor(isDarkMode ? .white.opacity(0.8) : Color(red: 0.18, green: 0.23, blue: 0.20))
+                                    .multilineTextAlignment(.center)
+                                    .lineSpacing(8)
+                                    .frame(maxWidth: .infinity, alignment: .center)
+                                
+                                verseFooter
+                            }
+                            .padding(24)
+                            .background(isDarkMode ? Color(red: 0.15, green: 0.17, blue: 0.16) : Color.white)
+                            .cornerRadius(24)
+                            .shadow(color: Color.black.opacity(isDarkMode ? 0.3 : 0.04), radius: 12, x: 0, y: 6)
+                            .padding(.horizontal, 24)
                             
-                            Text(cleanTranslationText(surahVerses[currentVerseIndex].translation))
-                                .font(.system(size: translationFontSize, weight: .medium, design: .serif))
-                                .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
-                                .multilineTextAlignment(.leading)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, 24)
-                                .padding(.top, 32)
-                                .fixedSize(horizontal: false, vertical: true)
-                            
-                            Spacer().frame(height: 40)
+                            Spacer().frame(height: 20)
                         }
                     }
                     
@@ -86,7 +118,6 @@ struct QuranReaderView: View {
         }
         .navigationBarHidden(true)
         .onAppear { loadVerses() }
-        // Auto-Advance Audio when verse finishes playing
         .onReceive(NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime)) { _ in
             if currentVerseIndex < surahVerses.count - 1 {
                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -104,10 +135,66 @@ struct QuranReaderView: View {
         }
     }
     
+    private var verseHeader: some View {
+        let verse = surahVerses[currentVerseIndex]
+        let isBookmarked = bookmarkedIDs.contains(verse.id)
+        
+        return HStack {
+            Button(action: {
+                triggerHaptic()
+                toggleAudio(for: verse)
+            }) {
+                Image(systemName: isPlayingAudio ? "stop.fill" : "play.fill")
+                    .foregroundColor(sageGreen)
+                    .padding(10)
+                    .background(sageGreen.opacity(0.15))
+                    .clipShape(Circle())
+                    .animation(nil, value: isPlayingAudio)
+            }
+            
+            Spacer()
+            
+            VStack(spacing: 2) {
+                Text("\(surahNumber). \(surahName)")
+                    .font(.system(.headline, design: .serif))
+                    .foregroundColor(isDarkMode ? .white : .black)
+                Text("\(verse.verseNumber) / \(surahVerses.count)")
+                    .font(.system(.caption, design: .rounded))
+                    .foregroundColor(.gray)
+            }
+            
+            Spacer()
+            
+            Button(action: {
+                triggerHaptic()
+                toggleBookmark(for: verse.id)
+            }) {
+                Image(systemName: isBookmarked ? "bookmark.fill" : "bookmark")
+                    .font(.system(size: 20))
+                    .foregroundColor(isBookmarked ? sageGreen : .gray)
+            }
+        }
+    }
+    
+    private var verseFooter: some View {
+        let verse = surahVerses[currentVerseIndex]
+        let shareText = "\(verse.arabicText(for: preferredScript))\n\n\(cleanTranslationText(verse.translation))\n\n— Quran \(surahNumber):\(verse.verseNumber) (\(surahName))"
+        
+        return HStack {
+            ShareLink(item: shareText) {
+                Image(systemName: "arrowshape.turn.up.right.fill")
+                    .foregroundColor(.gray)
+                    .padding(10)
+                    .background(Color.gray.opacity(0.1))
+                    .clipShape(Circle())
+            }
+            Spacer()
+        }
+    }
+    
     private var headerSection: some View {
         VStack(spacing: 16) {
             HStack(spacing: 8) {
-                // Back & Restart Buttons
                 HStack(spacing: 8) {
                     Button(action: {
                         triggerHaptic()
@@ -121,7 +208,6 @@ struct QuranReaderView: View {
                             .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
                             .clipShape(Circle())
                     }
-                    .accessibilityLabel("Go back")
                     
                     Button(action: {
                         triggerHaptic()
@@ -135,12 +221,10 @@ struct QuranReaderView: View {
                             .clipShape(Circle())
                     }
                     .disabled(currentVerseIndex == 0)
-                    .accessibilityLabel("Restart Surah from beginning")
                 }
                 
                 Spacer(minLength: 4)
                 
-                // Center Status Pill
                 HStack(spacing: 8) {
                     Image(systemName: "clock.fill")
                         .foregroundColor(sageGreen)
@@ -155,7 +239,6 @@ struct QuranReaderView: View {
                 
                 Spacer(minLength: 4)
                 
-                // Favorite & Settings Buttons
                 HStack(spacing: 8) {
                     let isFav = favoriteSurahs.contains(surahNumber)
                     Button(action: {
@@ -169,7 +252,6 @@ struct QuranReaderView: View {
                             .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
                             .clipShape(Circle())
                     }
-                    .accessibilityLabel(isFav ? "Remove surah from favorites" : "Add surah to favorites")
                     
                     Button(action: {
                         triggerHaptic()
@@ -182,7 +264,6 @@ struct QuranReaderView: View {
                             .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
                             .clipShape(Circle())
                     }
-                    .accessibilityLabel("Open reader settings")
                 }
             }
             .padding(.horizontal, 24)
@@ -192,14 +273,12 @@ struct QuranReaderView: View {
             let currentVerseNum = currentVerseIndex + 1
             let progress = Double(currentVerseNum) / Double(max(totalVerses, 1))
             
-            // Clean Minimalist Progress Bar with Interactive Tap-to-Jump Menu
             VStack(spacing: 8) {
                 ProgressView(value: progress)
                     .progressViewStyle(LinearProgressViewStyle(tint: sageGreen))
                     .padding(.horizontal, 24)
                 
                 HStack {
-                    // 🌟 Interactive Tap-to-Jump Menu replacing the clunky slider
                     Menu {
                         ForEach(0..<totalVerses, id: \.self) { index in
                             Button(action: {
@@ -226,7 +305,6 @@ struct QuranReaderView: View {
                         .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
                         .clipShape(Capsule())
                     }
-                    .accessibilityLabel("Jump to verse menu")
                     
                     Spacer()
                     
@@ -243,84 +321,6 @@ struct QuranReaderView: View {
                 .padding(.horizontal, 24)
             }
         }
-    }
-    
-    private func verseCard(verse: JSONVerse) -> some View {
-        let isBookmarked = bookmarkedIDs.contains(verse.id)
-        
-        return VStack(spacing: 24) {
-            HStack {
-                // Play Audio Button with NO FADE transition on icon change
-                Button(action: {
-                    triggerHaptic()
-                    toggleAudio(for: verse)
-                }) {
-                    Image(systemName: isPlayingAudio ? "stop.fill" : "play.fill")
-                        .foregroundColor(sageGreen)
-                        .padding(10)
-                        .background(sageGreen.opacity(0.15))
-                        .clipShape(Circle())
-                        .animation(nil, value: isPlayingAudio)
-                }
-                .accessibilityLabel(isPlayingAudio ? "Stop audio recitation" : "Play audio recitation")
-                
-                Spacer()
-                
-                VStack(spacing: 2) {
-                    Text("\(surahNumber). \(surahName)")
-                        .font(.system(.headline, design: .serif))
-                        .foregroundColor(isDarkMode ? .white : .black)
-                    Text("\(verse.verseNumber) / \(surahVerses.count)")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundColor(.gray)
-                }
-                
-                Spacer()
-                
-                // Bookmark Button
-                Button(action: {
-                    triggerHaptic()
-                    toggleBookmark(for: verse.id)
-                }) {
-                    Image(systemName: isBookmarked ? "bookmark.fill" : "bookmark")
-                        .font(.system(size: 20))
-                        .foregroundColor(isBookmarked ? sageGreen : .gray)
-                }
-                .accessibilityLabel(isBookmarked ? "Remove bookmark for verse" : "Bookmark verse")
-            }
-            
-            Text(verse.arabicText(for: preferredScript))
-                .font(.custom(arabicFont, size: arabicFontSize))
-                .multilineTextAlignment(.center)
-                .baselineOffset(10)
-                .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
-                .frame(maxWidth: .infinity, minHeight: 150)
-                .padding(.vertical, 24)
-                .id(arabicFont + preferredScript + "\(verse.id)")
-                .onAppear {
-                    GamificationManager.shared.logVerseRead(arabicText: verse.arabicText(for: preferredScript))
-                }
-            
-            HStack {
-                let shareText = "\(verse.arabicText(for: preferredScript))\n\n\(cleanTranslationText(verse.translation))\n\n— Quran \(surahNumber):\(verse.verseNumber) (\(surahName))"
-                
-                ShareLink(item: shareText) {
-                    Image(systemName: "arrowshape.turn.up.right.fill")
-                        .foregroundColor(.gray)
-                        .padding(10)
-                        .background(Color.gray.opacity(0.1))
-                        .clipShape(Circle())
-                }
-                .accessibilityLabel("Share verse")
-                
-                Spacer()
-            }
-        }
-        .padding(24)
-        .background(isDarkMode ? Color(red: 0.15, green: 0.17, blue: 0.16) : Color.white)
-        .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.04), radius: 15, x: 0, y: 8)
-        .padding(.horizontal, 24)
     }
     
     private var bottomControls: some View {
@@ -345,7 +345,6 @@ struct QuranReaderView: View {
                     )
             }
             .disabled(currentVerseIndex == 0)
-            .accessibilityLabel("Previous verse")
             
             Spacer()
             
@@ -362,7 +361,6 @@ struct QuranReaderView: View {
                     .background(isDarkMode ? Color.white : Color(red: 0.18, green: 0.23, blue: 0.20))
                     .cornerRadius(25)
             }
-            .accessibilityLabel("Finish reading session")
             
             Spacer()
             
@@ -384,13 +382,10 @@ struct QuranReaderView: View {
                     .cornerRadius(25)
             }
             .disabled(currentVerseIndex == surahVerses.count - 1)
-            .accessibilityLabel("Next verse")
         }
         .padding(.horizontal, 24)
         .padding(.top, 16)
     }
-    
-    // MARK: - Logic Helpers
     
     private func loadVerses() {
         let filtered = quranManager.verses.filter { $0.surahNumber == surahNumber }
@@ -430,8 +425,6 @@ struct QuranReaderView: View {
         generator.impactOccurred()
     }
     
-    // MARK: - Audio Logic
-    
     private func toggleAudio(for verse: JSONVerse, forcePlay: Bool = false) {
         if isPlayingAudio && !forcePlay {
             stopAudio()
@@ -451,7 +444,6 @@ struct QuranReaderView: View {
             
             NotificationCenter.default.addObserver(forName: .AVPlayerItemFailedToPlayToEndTime, object: playerItem, queue: .main) { _ in
                 self.isPlayingAudio = false
-                print("❌ Audio playback failed or network timeout.")
             }
             
             audioPlayer?.play()
@@ -463,8 +455,6 @@ struct QuranReaderView: View {
         audioPlayer?.pause()
         isPlayingAudio = false
     }
-    
-    // MARK: - Bookmark & Favorite Logic
     
     private var bookmarkedIDs: [Int] {
         bookmarkedVerseIDsStr.split(separator: ",").compactMap { Int($0) }
@@ -495,10 +485,9 @@ struct QuranReaderView: View {
     }
 }
 
-// MARK: - Reader Settings Sheet
+// ReaderSettingsSheet remains unchanged below...
 struct ReaderSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
-    
     @AppStorage("isDarkMode") private var isDarkMode = false
     @AppStorage("arabicFont") private var arabicFont = "KFGQPCUthmanTahaNaskh"
     @AppStorage("preferredScript") private var preferredScript = "uthmani"
@@ -525,7 +514,6 @@ struct ReaderSettingsSheet: View {
                 
                 ScrollView {
                     VStack(spacing: 24) {
-                        
                         VStack(spacing: 16) {
                             Text("Live Preview")
                                 .font(.system(.caption, design: .serif)).bold()
@@ -550,7 +538,6 @@ struct ReaderSettingsSheet: View {
                         .padding(.horizontal, 24)
                         
                         VStack(spacing: 0) {
-                            
                             Toggle(isOn: $isDarkMode) {
                                 HStack {
                                     Image(systemName: isDarkMode ? "moon.stars.fill" : "sun.max.fill")
@@ -597,7 +584,6 @@ struct ReaderSettingsSheet: View {
                             
                             Divider().background(Color.gray.opacity(0.2))
                             
-                            // Arabic Font Size Slider
                             VStack(alignment: .leading, spacing: 12) {
                                 HStack {
                                     Text("Arabic Text Size")
@@ -621,7 +607,6 @@ struct ReaderSettingsSheet: View {
                             
                             Divider().background(Color.gray.opacity(0.2))
                             
-                            // Translation Font Size Slider
                             VStack(alignment: .leading, spacing: 12) {
                                 HStack {
                                     Text("Translation Text Size")
