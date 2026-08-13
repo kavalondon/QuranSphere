@@ -234,3 +234,55 @@ Focused on improving the user experience by building a lightning-fast native lau
 •    High-Performance Search Optimization: Refactored local verse searching to evaluate pre-computed lowercase translation strings (searchableTranslation) during initial background parsing, completely eliminating main-thread keypress lag for instant lookups.
 •    Search Bar Focus Responsiveness: Fixed a UI usability bug in SurahListView by binding an explicit @FocusState to the search TextField and adding container .onTapGesture triggers, ensuring the keyboard and cursor activate on the very first tap.
 •    Surah Nomenclature Normalization: Programmatically normalized Surah 36 metadata across static datasets and computed properties to ensure it displays cleanly and consistently as "Yaseen" across all headers and lists.
+
+
+##  Devlog: Unicode Arabic Text Sanitization, UI Refinement & Accessibility Polish
+Date: August 12, 2026
+🎯 Summary
+Focused on perfecting the core reading experience by resolving missing-glyph rendering bugs at the Unicode level for IndoPak scripts, decluttering the verse navigation interface, and hardening the app with robust accessibility and background audio capabilities for App Store readiness.
+🛠️ Detailed List of Changes & Updates
+1. Arabic Text Rendering & Unicode Sanitization
+•    Unicode-Level Text Cleaning: Upgraded the arabicText(for:) function inside LocalQuranManager.swift to enforce strict Unicode scalar filtering when IndoPak script is active, ensuring output is restricted exclusively to valid Arabic script blocks and whitespace.
+•    Missing Glyph ([?]) Elimination: Resolved persistent rendering bugs where custom TrueType fonts (such as PDMS Saleem) lacked character glyph mappings for specialized dataset pause marks, completely eradicating fallback placeholder boxes across all script and font combinations.
+•    Layout & Diacritic Protection: Prevented text clipping of complex Arabic ligatures and Tajweed symbols in QuranReaderView by substituting rigid .lineSpacing constraints with safe .baselineOffset and vertical padding modifiers.
+2. UI Polish & Navigation Refinements
+•    Clutter-Free Verse Navigation: Removed clunky floating sliders and replaced them with an intuitive, minimalist Tap-to-Jump Menu integrated into the header, preserving a distraction-free reading atmosphere.
+•    Independent Translation Sizing: Introduced an @AppStorage-backed translation font size slider inside ReaderSettingsSheet, allowing users to adjust English text scaling independently from Arabic script.
+•    Surah Nomenclature Normalization: Programmatically standardized Surah metadata rules to ensure Surah 36 displays consistently as "Yaseen" across all view hierarchies.
+•    Instant Play/Stop Toggle: Added .animation(nil, value: isPlayingAudio) to the audio recitation buttons to instantly swap states without crossfades or opacity transitions.
+3. Performance & Architecture
+•    High-Performance Search Optimization: Refactored local verse searching to evaluate pre-computed lowercase translation strings (searchableTranslation) during initial background parsing, removing main-thread keypress lag.
+•    Search Bar Responsiveness: Bound an explicit @FocusState to search input fields and added container gesture triggers to guarantee immediate keyboard and cursor activation on first touch.
+•    Rich Multi-Script Integration: Upgraded core JSON data parsers to cleanly manage localized Uthmani, IndoPak, and English Transliteration datasets locally.
+4. App Store Readiness & Accessibility
+•    Tactile Haptic Feedback: Embedded light system haptic generators (UIImpactFeedbackGenerator) across bookmarks, favorite toggles, audio playback, and navigation controls.
+•    Audio Auto-Advance & Background Play: Configured AVPlayerItemDidPlayToEndTime notifications to seamlessly auto-advance to the next verse and trigger audio playback continuously, supported by explicit background audio capabilities in Xcode.
+•    VoiceOver Accessibility Compliance: Added explicit .accessibilityLabel tags to all core icon buttons to guarantee full screen-reader support.
+
+
+**
+
+## Devlog: Widgets, Deep Linking, and UI Overhaul
+Date: August 13, 2026
+
+Module: QuransphereWidget & QiblaCompassView
+
+🚀 Features & Updates
+1. Home Screen Widget implementation
+• Built a Standalone Extension: Created a medium-sized widget that operates completely independently of App Groups for initial testing and design iteration.
+• Pillars-Inspired Layout: Designed a sleek, hierarchical grid layout. The top half prominently displays the next prayer and its time, while the bottom half features a 5-prayer horizontal timeline with active-state indicators (gold dot and bold text).
+• iOS 17 Compatibility: Adopted the new .containerBackground(for: .widget) API required by Apple to prevent background rendering crashes on modern devices.
+• Branding: Applied the core QuranSphere palette (pillarsSage, pillarsWarmSand, pillarsBackgroundDark, and pillarsAccentGold) with full Light/Dark mode support reflecting system settings.
+2. Deep Linking Architecture
+• Widget Routing: Added the .widgetURL() modifier to broadcast a custom URL scheme (quransphere://qibla) when the user taps the widget.
+• App-Side Handling: Implemented the .onOpenURL modifier in the root ContentView. When the widget is tapped, the app wakes up, intercepts the URL, and seamlessly animates the custom floating tab bar over to the Qibla/Prayers page.
+3. Qibla & Prayer Times UI Redesign
+• Separation of Concerns (UX): Separated the Qibla Compass and the Prayer Times list to prevent visual clutter and give the premium compass UI room to breathe.
+• Custom Sliding Toggle: Built a bespoke, pill-shaped segmented control at the top of the screen. Utilized SwiftUI's @Namespace and .matchedGeometryEffect for a fluid, physics-based sliding animation when switching tabs.
+• SwiftUI Layout Bug Fix: Encountered a native SwiftUI bug where placing a swipeable TabView inside a parent ScrollView caused the views to collapse to 0 pixels in height.
+• The Solution: Bypassed TabView entirely by using dynamic conditional rendering (if selectedTab == ...) paired with .transition(.opacity.combined(with: .scale(scale: 0.98))). This guaranteed the pages render at full height while maintaining a buttery-smooth page swap animation.
+• Preserved Authentic Logic: Successfully re-injected the original CoreLocation math, Aladhan API fetcher, and UIImpactFeedbackGenerator (Taptic Engine) without altering the authentic code.
+🔜 Next Steps
+• Adhaan Notifications: Implement UNUserNotificationCenter to schedule local notifications when prayer times arrive.
+• Audio Trimming: Crop the Adhaan .wav file to meet Apple's strict 30-second limit for custom notification alerts.
+• App Group Integration: Set up the paid Apple Developer account to enable App Groups, allowing the main app's live Aladhan data to feed directly into the widget target.

@@ -51,6 +51,10 @@
 		5ED0B9EE302CBCE600917140 /* RichQuranVerse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED0B9ED302CBCE100917140 /* RichQuranVerse.swift */; };
 		5ED0B9F0302CCDE500917140 /* quran-indopak.json in Resources */ = {isa = PBXBuildFile; fileRef = 5ED0B9EF302CCDE500917140 /* quran-indopak.json */; };
 		5ED0B9F2302CCF4E00917140 /* quran-transliteration.json in Resources */ = {isa = PBXBuildFile; fileRef = 5ED0B9F1302CCF4E00917140 /* quran-transliteration.json */; };
+		5ED0BA33302D817A00917140 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5ED0B9F9302D26BE00917140 /* WidgetKit.framework */; };
+		5ED0BA34302D817A00917140 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5ED0B9FB302D26BE00917140 /* SwiftUI.framework */; };
+		5ED0BA43302D817C00917140 /* QuransphereWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 5ED0BA32302D817A00917140 /* QuransphereWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		5ED0BA48302D818E00917140 /* Color+Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E854D82300C55AA00E627E6 /* Color+Palette.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -68,7 +72,28 @@
 			remoteGlobalIDString = 5E2BDBB43007EB5C007BD194;
 			remoteInfo = QuranSphere;
 		};
+		5ED0BA41302D817C00917140 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5E2BDBAD3007EB5C007BD194 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5ED0BA31302D817A00917140;
+			remoteInfo = QuransphereWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		5ED0BA10302D26C100917140 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				5ED0BA43302D817C00917140 /* QuransphereWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		5E14952D300D9EFF003D68DC /* QiblaPrayerTimesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QiblaPrayerTimesView.swift; sourceTree = "<group>"; };
@@ -117,7 +142,20 @@
 		5ED0B9ED302CBCE100917140 /* RichQuranVerse.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichQuranVerse.swift; sourceTree = "<group>"; };
 		5ED0B9EF302CCDE500917140 /* quran-indopak.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "quran-indopak.json"; sourceTree = "<group>"; };
 		5ED0B9F1302CCF4E00917140 /* quran-transliteration.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "quran-transliteration.json"; sourceTree = "<group>"; };
+		5ED0B9F9302D26BE00917140 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		5ED0B9FB302D26BE00917140 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
+		5ED0BA32302D817A00917140 /* QuransphereWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = QuransphereWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		5ED0BA44302D817C00917140 /* Exceptions for "QuransphereWidget" folder in "QuransphereWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 5ED0BA31302D817A00917140 /* QuransphereWidgetExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5E2BDBC53007EB63007BD194 /* QuranSphereTests */ = {
@@ -128,6 +166,14 @@
 		5E2BDBCF3007EB63007BD194 /* QuranSphereUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = QuranSphereUITests;
+			sourceTree = "<group>";
+		};
+		5ED0BA35302D817A00917140 /* QuransphereWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5ED0BA44302D817C00917140 /* Exceptions for "QuransphereWidget" folder in "QuransphereWidgetExtension" target */,
+			);
+			path = QuransphereWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -154,6 +200,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5ED0BA2F302D817A00917140 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5ED0BA34302D817A00917140 /* SwiftUI.framework in Frameworks */,
+				5ED0BA33302D817A00917140 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -164,6 +219,8 @@
 				5E854DA5300C564F00E627E6 /* QuranSphere - Code */,
 				5E2BDBC53007EB63007BD194 /* QuranSphereTests */,
 				5E2BDBCF3007EB63007BD194 /* QuranSphereUITests */,
+				5ED0BA35302D817A00917140 /* QuransphereWidget */,
+				5ED0B9F8302D26BE00917140 /* Frameworks */,
 				5E2BDBB63007EB5C007BD194 /* Products */,
 				5E854DA4300C55B400E627E6 /* QuranSphere-Bridging-Header.h */,
 			);
@@ -175,6 +232,7 @@
 				5E2BDBB53007EB5C007BD194 /* QuranSphereApp.app */,
 				5E2BDBC23007EB63007BD194 /* QuranSphereTests.xctest */,
 				5E2BDBCC3007EB63007BD194 /* QuranSphereUITests.xctest */,
+				5ED0BA32302D817A00917140 /* QuransphereWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -235,6 +293,15 @@
 			path = Fonts;
 			sourceTree = "<group>";
 		};
+		5ED0B9F8302D26BE00917140 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				5ED0B9F9302D26BE00917140 /* WidgetKit.framework */,
+				5ED0B9FB302D26BE00917140 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -245,10 +312,12 @@
 				5E2BDBB13007EB5C007BD194 /* Sources */,
 				5E2BDBB23007EB5C007BD194 /* Frameworks */,
 				5E2BDBB33007EB5C007BD194 /* Resources */,
+				5ED0BA10302D26C100917140 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				5ED0BA42302D817C00917140 /* PBXTargetDependency */,
 			);
 			name = QuranSphere;
 			packageProductDependencies = (
@@ -303,6 +372,28 @@
 			productReference = 5E2BDBCC3007EB63007BD194 /* QuranSphereUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
+		5ED0BA31302D817A00917140 /* QuransphereWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5ED0BA45302D817C00917140 /* Build configuration list for PBXNativeTarget "QuransphereWidgetExtension" */;
+			buildPhases = (
+				5ED0BA2E302D817A00917140 /* Sources */,
+				5ED0BA2F302D817A00917140 /* Frameworks */,
+				5ED0BA30302D817A00917140 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				5ED0BA35302D817A00917140 /* QuransphereWidget */,
+			);
+			name = QuransphereWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = QuransphereWidgetExtension;
+			productReference = 5ED0BA32302D817A00917140 /* QuransphereWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -325,6 +416,9 @@
 						CreatedOnToolsVersion = 26.6;
 						TestTargetID = 5E2BDBB43007EB5C007BD194;
 					};
+					5ED0BA31302D817A00917140 = {
+						CreatedOnToolsVersion = 26.6;
+					};
 				};
 			};
 			buildConfigurationList = 5E2BDBB03007EB5C007BD194 /* Build configuration list for PBXProject "QuranSphere" */;
@@ -344,6 +438,7 @@
 				5E2BDBB43007EB5C007BD194 /* QuranSphere */,
 				5E2BDBC13007EB63007BD194 /* QuranSphereTests */,
 				5E2BDBCB3007EB63007BD194 /* QuranSphereUITests */,
+				5ED0BA31302D817A00917140 /* QuransphereWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -377,6 +472,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		5E2BDBCA3007EB63007BD194 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5ED0BA30302D817A00917140 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -438,6 +540,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5ED0BA2E302D817A00917140 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5ED0BA48302D818E00917140 /* Color+Palette.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -450,6 +560,11 @@
 			isa = PBXTargetDependency;
 			target = 5E2BDBB43007EB5C007BD194 /* QuranSphere */;
 			targetProxy = 5E2BDBCD3007EB63007BD194 /* PBXContainerItemProxy */;
+		};
+		5ED0BA42302D817C00917140 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5ED0BA31302D817A00917140 /* QuransphereWidgetExtension */;
+			targetProxy = 5ED0BA41302D817C00917140 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -579,6 +694,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = QuranSphere/QuranSphere.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=*]" = "";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -619,6 +735,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = QuranSphere/QuranSphere.entitlements;
 				"CODE_SIGN_ENTITLEMENTS[sdk=*]" = "";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
@@ -742,6 +859,68 @@
 			};
 			name = Release;
 		};
+		5ED0BA46302D817C00917140 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3XJJK875MN;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = QuransphereWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = QuransphereWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kava.QuranSphere..QuransphereWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		5ED0BA47302D817C00917140 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 3XJJK875MN;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = QuransphereWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = QuransphereWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kava.QuranSphere..QuransphereWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -777,6 +956,15 @@
 			buildConfigurations = (
 				5E2BDBDD3007EB63007BD194 /* Debug */,
 				5E2BDBDE3007EB63007BD194 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5ED0BA45302D817C00917140 /* Build configuration list for PBXNativeTarget "QuransphereWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5ED0BA46302D817C00917140 /* Debug */,
+				5ED0BA47302D817C00917140 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

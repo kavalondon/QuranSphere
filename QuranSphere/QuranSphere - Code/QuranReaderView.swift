@@ -23,6 +23,7 @@ struct QuranReaderView: View {
     @AppStorage("arabicFont") private var arabicFont = "KFGQPCUthmanTahaNaskh"
     @AppStorage("preferredScript") private var preferredScript = "uthmani"
     @AppStorage("arabicFontSize") private var arabicFontSize: Double = 38.0
+    @AppStorage("translationFontSize") private var translationFontSize: Double = 20.0
     
     @State private var surahVerses: [JSONVerse] = []
     @State private var currentVerseIndex: Int = 0
@@ -33,6 +34,13 @@ struct QuranReaderView: View {
     @State private var isPlayingAudio = false
     
     let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
+    
+    // Clean Translation Helper: Removes trailing footnote numbers
+    private func cleanTranslationText(_ rawText: String) -> String {
+        let noTags = rawText.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+        let cleaned = noTags.replacingOccurrences(of: "\\.\\s*\\d+$", with: ".", options: .regularExpression)
+        return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
     
     var body: some View {
         ZStack {
@@ -58,8 +66,8 @@ struct QuranReaderView: View {
                             
                             verseCard(verse: surahVerses[currentVerseIndex])
                             
-                            Text(surahVerses[currentVerseIndex].translation)
-                                .font(.system(size: 20, weight: .medium, design: .serif))
+                            Text(cleanTranslationText(surahVerses[currentVerseIndex].translation))
+                                .font(.system(size: translationFontSize, weight: .medium, design: .serif))
                                 .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
                                 .multilineTextAlignment(.leading)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -78,9 +86,18 @@ struct QuranReaderView: View {
         }
         .navigationBarHidden(true)
         .onAppear { loadVerses() }
-        // Stop audio when the verse finishes playing
+        // Auto-Advance Audio when verse finishes playing
         .onReceive(NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime)) { _ in
-            isPlayingAudio = false
+            if currentVerseIndex < surahVerses.count - 1 {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    currentVerseIndex += 1
+                    saveProgress()
+                }
+                let nextVerse = surahVerses[currentVerseIndex]
+                toggleAudio(for: nextVerse, forcePlay: true)
+            } else {
+                isPlayingAudio = false
+            }
         }
         .sheet(isPresented: $showSettings) {
             ReaderSettingsSheet()
@@ -93,6 +110,7 @@ struct QuranReaderView: View {
                 // Back & Restart Buttons
                 HStack(spacing: 8) {
                     Button(action: {
+                        triggerHaptic()
                         stopAudio()
                         dismiss()
                     }) {
@@ -103,8 +121,10 @@ struct QuranReaderView: View {
                             .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
                             .clipShape(Circle())
                     }
+                    .accessibilityLabel("Go back")
                     
                     Button(action: {
+                        triggerHaptic()
                         restartSurah()
                     }) {
                         Image(systemName: "arrow.counterclockwise")
@@ -115,6 +135,7 @@ struct QuranReaderView: View {
                             .clipShape(Circle())
                     }
                     .disabled(currentVerseIndex == 0)
+                    .accessibilityLabel("Restart Surah from beginning")
                 }
                 
                 Spacer(minLength: 4)
@@ -138,6 +159,7 @@ struct QuranReaderView: View {
                 HStack(spacing: 8) {
                     let isFav = favoriteSurahs.contains(surahNumber)
                     Button(action: {
+                        triggerHaptic()
                         toggleFavoriteSurah()
                     }) {
                         Image(systemName: isFav ? "heart.fill" : "heart")
@@ -147,8 +169,12 @@ struct QuranReaderView: View {
                             .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
                             .clipShape(Circle())
                     }
+                    .accessibilityLabel(isFav ? "Remove surah from favorites" : "Add surah to favorites")
                     
-                    Button(action: { showSettings = true }) {
+                    Button(action: {
+                        triggerHaptic()
+                        showSettings = true
+                    }) {
                         Image(systemName: "gearshape")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(isDarkMode ? .white : .black)
@@ -156,6 +182,7 @@ struct QuranReaderView: View {
                             .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
                             .clipShape(Circle())
                     }
+                    .accessibilityLabel("Open reader settings")
                 }
             }
             .padding(.horizontal, 24)
@@ -163,24 +190,56 @@ struct QuranReaderView: View {
             
             let totalVerses = surahVerses.count
             let currentVerseNum = currentVerseIndex + 1
-            let progress = Double(currentVerseNum) / Double(max(totalVerses, 1)) // prevent division by zero
+            let progress = Double(currentVerseNum) / Double(max(totalVerses, 1))
             
+            // Clean Minimalist Progress Bar with Interactive Tap-to-Jump Menu
             VStack(spacing: 8) {
                 ProgressView(value: progress)
                     .progressViewStyle(LinearProgressViewStyle(tint: sageGreen))
                     .padding(.horizontal, 24)
                 
                 HStack {
-                    Text("\(currentVerseNum) / \(totalVerses)")
-                        .font(.system(.caption, design: .rounded)).bold()
+                    // 🌟 Interactive Tap-to-Jump Menu replacing the clunky slider
+                    Menu {
+                        ForEach(0..<totalVerses, id: \.self) { index in
+                            Button(action: {
+                                triggerHaptic()
+                                stopAudio()
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    currentVerseIndex = index
+                                    saveProgress()
+                                }
+                            }) {
+                                Text("Verse \(index + 1)")
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text("\(currentVerseNum) / \(totalVerses)")
+                                .font(.system(.caption, design: .rounded)).bold()
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 9, weight: .bold))
+                        }
+                        .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                        .clipShape(Capsule())
+                    }
+                    .accessibilityLabel("Jump to verse menu")
+                    
                     Spacer()
+                    
                     Text("\(totalVerses - currentVerseNum) Verses left")
                         .font(.system(.caption, design: .rounded))
+                        .foregroundColor(.gray)
+                    
                     Spacer()
+                    
                     Text("\(Int(progress * 100))%")
                         .font(.system(.caption, design: .rounded)).bold()
+                        .foregroundColor(.gray)
                 }
-                .foregroundColor(.gray)
                 .padding(.horizontal, 24)
             }
         }
@@ -191,14 +250,19 @@ struct QuranReaderView: View {
         
         return VStack(spacing: 24) {
             HStack {
-                // Play Audio Button
-                Button(action: { toggleAudio(for: verse) }) {
+                // Play Audio Button with NO FADE transition on icon change
+                Button(action: {
+                    triggerHaptic()
+                    toggleAudio(for: verse)
+                }) {
                     Image(systemName: isPlayingAudio ? "stop.fill" : "play.fill")
                         .foregroundColor(sageGreen)
                         .padding(10)
                         .background(sageGreen.opacity(0.15))
                         .clipShape(Circle())
+                        .animation(nil, value: isPlayingAudio)
                 }
+                .accessibilityLabel(isPlayingAudio ? "Stop audio recitation" : "Play audio recitation")
                 
                 Spacer()
                 
@@ -214,14 +278,17 @@ struct QuranReaderView: View {
                 Spacer()
                 
                 // Bookmark Button
-                Button(action: { toggleBookmark(for: verse.id) }) {
+                Button(action: {
+                    triggerHaptic()
+                    toggleBookmark(for: verse.id)
+                }) {
                     Image(systemName: isBookmarked ? "bookmark.fill" : "bookmark")
                         .font(.system(size: 20))
                         .foregroundColor(isBookmarked ? sageGreen : .gray)
                 }
+                .accessibilityLabel(isBookmarked ? "Remove bookmark for verse" : "Bookmark verse")
             }
             
-            // 🌟 THE FIX: Removed lineSpacing and fixedSize. Added baselineOffset.
             Text(verse.arabicText(for: preferredScript))
                 .font(.custom(arabicFont, size: arabicFontSize))
                 .multilineTextAlignment(.center)
@@ -235,8 +302,7 @@ struct QuranReaderView: View {
                 }
             
             HStack {
-                // Native ShareLink replacing empty button
-                let shareText = "\(verse.arabicText(for: preferredScript))\n\n\(verse.translation)\n\n— Quran \(surahNumber):\(verse.verseNumber) (\(surahName))"
+                let shareText = "\(verse.arabicText(for: preferredScript))\n\n\(cleanTranslationText(verse.translation))\n\n— Quran \(surahNumber):\(verse.verseNumber) (\(surahName))"
                 
                 ShareLink(item: shareText) {
                     Image(systemName: "arrowshape.turn.up.right.fill")
@@ -245,6 +311,7 @@ struct QuranReaderView: View {
                         .background(Color.gray.opacity(0.1))
                         .clipShape(Circle())
                 }
+                .accessibilityLabel("Share verse")
                 
                 Spacer()
             }
@@ -259,6 +326,7 @@ struct QuranReaderView: View {
     private var bottomControls: some View {
         HStack {
             Button(action: {
+                triggerHaptic()
                 if currentVerseIndex > 0 {
                     stopAudio()
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -277,10 +345,12 @@ struct QuranReaderView: View {
                     )
             }
             .disabled(currentVerseIndex == 0)
+            .accessibilityLabel("Previous verse")
             
             Spacer()
             
             Button(action: {
+                triggerHaptic()
                 stopAudio()
                 dismiss()
             }) {
@@ -292,10 +362,12 @@ struct QuranReaderView: View {
                     .background(isDarkMode ? Color.white : Color(red: 0.18, green: 0.23, blue: 0.20))
                     .cornerRadius(25)
             }
+            .accessibilityLabel("Finish reading session")
             
             Spacer()
             
             Button(action: {
+                triggerHaptic()
                 if currentVerseIndex < surahVerses.count - 1 {
                     stopAudio()
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -312,6 +384,7 @@ struct QuranReaderView: View {
                     .cornerRadius(25)
             }
             .disabled(currentVerseIndex == surahVerses.count - 1)
+            .accessibilityLabel("Next verse")
         }
         .padding(.horizontal, 24)
         .padding(.top, 16)
@@ -352,10 +425,15 @@ struct QuranReaderView: View {
         }
     }
     
+    private func triggerHaptic() {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+    }
+    
     // MARK: - Audio Logic
     
-    private func toggleAudio(for verse: JSONVerse) {
-        if isPlayingAudio {
+    private func toggleAudio(for verse: JSONVerse, forcePlay: Bool = false) {
+        if isPlayingAudio && !forcePlay {
             stopAudio()
         } else {
             do {
@@ -370,6 +448,12 @@ struct QuranReaderView: View {
             
             let playerItem = AVPlayerItem(url: url)
             audioPlayer = AVPlayer(playerItem: playerItem)
+            
+            NotificationCenter.default.addObserver(forName: .AVPlayerItemFailedToPlayToEndTime, object: playerItem, queue: .main) { _ in
+                self.isPlayingAudio = false
+                print("❌ Audio playback failed or network timeout.")
+            }
+            
             audioPlayer?.play()
             isPlayingAudio = true
         }
@@ -419,6 +503,7 @@ struct ReaderSettingsSheet: View {
     @AppStorage("arabicFont") private var arabicFont = "KFGQPCUthmanTahaNaskh"
     @AppStorage("preferredScript") private var preferredScript = "uthmani"
     @AppStorage("arabicFontSize") private var arabicFontSize: Double = 38.0
+    @AppStorage("translationFontSize") private var translationFontSize: Double = 20.0
     
     let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
     
@@ -448,7 +533,6 @@ struct ReaderSettingsSheet: View {
                                 .textCase(.uppercase)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             
-                            // 🌟 THE FIX: Applied to the live preview window as well
                             Text(previewText)
                                 .font(.custom(arabicFont, size: arabicFontSize))
                                 .multilineTextAlignment(.center)
@@ -513,9 +597,10 @@ struct ReaderSettingsSheet: View {
                             
                             Divider().background(Color.gray.opacity(0.2))
                             
+                            // Arabic Font Size Slider
                             VStack(alignment: .leading, spacing: 12) {
                                 HStack {
-                                    Text("Text Size")
+                                    Text("Arabic Text Size")
                                         .font(.system(.body, design: .serif))
                                         .foregroundColor(isDarkMode ? .white : .black)
                                     Spacer()
@@ -527,6 +612,30 @@ struct ReaderSettingsSheet: View {
                                 HStack(spacing: 16) {
                                     Text("A").font(.system(size: 14))
                                     Slider(value: $arabicFontSize, in: 24...64, step: 2)
+                                        .tint(sageGreen)
+                                    Text("A").font(.system(size: 24))
+                                }
+                                .foregroundColor(.gray)
+                            }
+                            .padding(.vertical, 16)
+                            
+                            Divider().background(Color.gray.opacity(0.2))
+                            
+                            // Translation Font Size Slider
+                            VStack(alignment: .leading, spacing: 12) {
+                                HStack {
+                                    Text("Translation Text Size")
+                                        .font(.system(.body, design: .serif))
+                                        .foregroundColor(isDarkMode ? .white : .black)
+                                    Spacer()
+                                    Text("\(Int(translationFontSize))")
+                                        .font(.system(.subheadline, design: .rounded)).bold()
+                                        .foregroundColor(sageGreen)
+                                }
+                                
+                                HStack(spacing: 16) {
+                                    Text("A").font(.system(size: 14))
+                                    Slider(value: $translationFontSize, in: 14...32, step: 2)
                                         .tint(sageGreen)
                                     Text("A").font(.system(size: 24))
                                 }
