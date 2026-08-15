@@ -6,6 +6,7 @@ struct SettingsView: View {
     @AppStorage("preferredScript") private var preferredScript = "uthmani"
     @AppStorage("arabicFontSize") private var arabicFontSize: Double = 38.0
     @AppStorage("locationEnabled") private var locationEnabled = false
+    @AppStorage("dailyVerseGoal") private var dailyVerseGoal: Int = 5 // Added for daily reading goals
     
     // Core brand color
     let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
@@ -59,6 +60,23 @@ struct SettingsView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(PlainButtonStyle())
+            }
+            
+            // MARK: - Reading Goals Section (NEW)
+            settingsSection(title: "Reading Goals") {
+                HStack {
+                    settingRow(icon: "star.fill", title: "Daily Verse Goal", color: .yellow)
+                    
+                    Spacer()
+                    
+                    Stepper("\(dailyVerseGoal) verses", value: $dailyVerseGoal, in: 1...50, step: 1)
+                        .labelsHidden()
+                    
+                    Text("\(dailyVerseGoal)")
+                        .font(.system(.body, design: .rounded)).bold()
+                        .foregroundColor(sageGreen)
+                        .frame(minWidth: 30, alignment: .trailing)
+                }
             }
             
             // MARK: - Live Preview Section

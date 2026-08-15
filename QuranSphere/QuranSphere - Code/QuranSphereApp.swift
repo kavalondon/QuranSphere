@@ -9,14 +9,14 @@ import SwiftUI
 
 @main
 struct QuranSphereApp: App {
-    // 1. Initialize the manager here so it stays alive for the whole app
     @StateObject private var quranManager = LocalQuranManager()
+    @StateObject private var khatmahManager = KhatmahManager.shared // Add this line
     
     var body: some Scene {
         WindowGroup {
             ContentView()
-                // 2. Inject it into the environment for all sub-views to access
                 .environmentObject(quranManager)
+                .environmentObject(khatmahManager) // Inject it here
         }
     }
 }

@@ -9,6 +9,7 @@ enum Tab {
 
 struct ContentView: View {
     @EnvironmentObject var quranManager: LocalQuranManager
+    @EnvironmentObject var khatmahManager: KhatmahManager
     
     // MARK: - App Storage
     @AppStorage("isDarkMode") private var isDarkMode = false
@@ -37,7 +38,7 @@ struct ContentView: View {
     @State private var activeTab: Tab = .home
     @State private var selectedMood: String = ""
     @State private var currentComfortVerse: JSONVerse? = nil
-    
+    @State private var showingKhatmahSheet = false
     @State private var searchClearTrigger: Int = 0
     
     let moods = [
@@ -84,10 +85,18 @@ struct ContentView: View {
             }
         }
         .onOpenURL { url in
-            if url.absoluteString.contains("qibla") || url.host == "qibla" {
+            let urlString = url.absoluteString
+            if urlString.contains("qibla") || url.host == "qibla" {
                 activeTab = .qibla
-            } else if url.absoluteString.contains("settings") || url.host == "settings" {
+            } else if urlString.contains("settings") || url.host == "settings" {
                 activeTab = .settings
+            } else if urlString.contains("surah") {
+                if let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+                   let queryItems = components.queryItems,
+                   let surahStr = queryItems.first(where: { $0.name == "number" })?.value,
+                   let surahNum = Int(surahStr) {
+                    activeTab = .home
+                }
             } else {
                 activeTab = .home
             }
@@ -188,7 +197,7 @@ extension ContentView {
         }
     }
     
-    // 3. Gamification Dashboard
+    // 3. Unified Spiritual Progress Dashboard
     private var progressDashboard: some View {
         VStack(spacing: 0) {
             NavigationLink(destination: QuranReaderView(surahNumber: lastReadSurah, surahName: lastReadSurahName)) {
@@ -221,7 +230,7 @@ extension ContentView {
                         Text("\(currentStreak) \(currentStreak == 1 ? "Day" : "Days")")
                             .font(.system(.subheadline, design: .rounded)).bold()
                     }
-                    Text("Current Streak")
+                    Text("Streak")
                         .font(.system(size: 11))
                         .foregroundColor(.gray)
                 }
@@ -233,7 +242,7 @@ extension ContentView {
                         Text("\(versesReadToday)/\(dailyVerseGoal)")
                             .font(.system(.subheadline, design: .rounded)).bold()
                     }
-                    Text("Daily Verses")
+                    Text("Daily Goal")
                         .font(.system(size: 11))
                         .foregroundColor(.gray)
                 }
@@ -245,18 +254,54 @@ extension ContentView {
                         Text("\(totalHasanat.formatted())")
                             .font(.system(.subheadline, design: .rounded)).bold()
                     }
-                    Text("Hasanat Today")
+                    Text("Hasanat")
                         .font(.system(size: 11))
                         .foregroundColor(.gray)
                 }
             }
             .padding(20)
             .background(isDarkMode ? Color.white.opacity(0.02) : Color(red: 0.98, green: 0.98, blue: 0.96))
+            
+            Divider().padding(.horizontal, 20)
+            
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "book.closed.fill")
+                            .foregroundColor(Color(red: 0.38, green: 0.48, blue: 0.43))
+                        Text("Khatmah Goal")
+                            .font(.system(.subheadline, design: .serif)).bold()
+                            .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
+                    }
+                    Text(khatmahManager.isKhatmahActive ? "\(khatmahManager.daysRemaining) days left (\(Int(readingProgress * 100))%)" : "Not Started")
+                        .font(.system(size: 11))
+                        .foregroundColor(.gray)
+                }
+                
+                Spacer()
+                
+                Button(action: {
+                    showingKhatmahSheet = true
+                }) {
+                    Text(khatmahManager.isKhatmahActive ? "Configure" : "Start Khatmah")
+                        .font(.system(size: 12, design: .serif)).bold()
+                        .foregroundColor(Color(red: 0.38, green: 0.48, blue: 0.43))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color(red: 0.38, green: 0.48, blue: 0.43).opacity(0.1))
+                        .clipShape(Capsule())
+                }
+            }
+            .padding(20)
         }
         .background(isDarkMode ? Color.white.opacity(0.06) : Color.white)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
         .padding(.horizontal, 24)
+        .sheet(isPresented: $showingKhatmahSheet) {
+            KhatmahSettingsSheet()
+                .presentationDetents([.medium])
+        }
     }
     
     // 4. Quick Links
@@ -294,10 +339,6 @@ extension ContentView {
                     Text("Guides & Learning")
                         .font(.system(.title3, design: .serif)).bold()
                         .foregroundColor(.white)
-                    
-                    Text("Explore all topics, cards, and resources")
-                        .font(.system(.subheadline, design: .serif))
-                        .foregroundColor(.white.opacity(0.8))
                 }
                 
                 Spacer()
@@ -315,6 +356,69 @@ extension ContentView {
         }
         .buttonStyle(PlainButtonStyle())
         .padding(.horizontal, 24)
+    }
+}
+
+// MARK: - Khatmah Settings Sheet Component
+struct KhatmahSettingsSheet: View {
+    @EnvironmentObject var khatmahManager: KhatmahManager
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var selectedDays: Int = 30
+    let presetDays = [7, 15, 30, 60, 90, 120]
+    
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(header: Text("Choose Khatmah Duration")) {
+                    Picker("Target Days", selection: $selectedDays) {
+                        ForEach(presetDays, id: \.self) { days in
+                            Text("\(days) Days").tag(days)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .padding(.vertical, 4)
+                    
+                    Text("This breaks down the Holy Quran into a daily reading goal tailored to a \(selectedDays)-day completion schedule.")
+                        .font(.system(.caption, design: .serif))
+                        .foregroundColor(.gray)
+                }
+                
+                Section {
+                    Button(action: {
+                        khatmahManager.startKhatmah(days: selectedDays)
+                        dismiss()
+                    }) {
+                        Text(khatmahManager.isKhatmahActive ? "Update Goal" : "Start Khatmah")
+                            .font(.system(.body, design: .serif)).bold()
+                            .frame(maxWidth: .infinity, alignment: .center)
+                            .foregroundColor(.white)
+                    }
+                    .listRowBackground(Color(red: 0.38, green: 0.48, blue: 0.43))
+                    
+                    if khatmahManager.isKhatmahActive {
+                        Button(role: .destructive, action: {
+                            khatmahManager.resetKhatmah()
+                            dismiss()
+                        }) {
+                            Text("Cancel Active Khatmah")
+                                .font(.system(.body, design: .serif))
+                                .frame(maxWidth: .infinity, alignment: .center)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Manage Khatmah")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Close") { dismiss() }
+                }
+            }
+            .onAppear {
+                selectedDays = khatmahManager.khatmahDaysTarget
+            }
+        }
     }
 }
 

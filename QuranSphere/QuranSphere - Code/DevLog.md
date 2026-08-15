@@ -307,3 +307,73 @@ Module: QuransphereWidget & QiblaCompassView
 •    Advanced Footnote Sanitizer: Upgraded the translation cleaner function with robust Unicode regular expressions ([\p{L}\.,]\d+) to completely strip out annoying inline footnote numbers attached to words and punctuation.
 
 
+# Feature: 5 Pillars of Islam Guide 🕌
+
+## Overview
+This update introduces the **5 Pillars of Islam** learning page to the `GuidesSectionView`. The UI has been carefully crafted to strictly adhere to the app's premium, minimalist aesthetic, using a custom soft-beige background, serif typography, and flat, crisp cards.
+
+## 🗂 Files Changed
+
+*   **`GuidesSectionView.swift`** (Modified)
+    *   Appended `GuideCard` for "5 Pillars" to the `howToGuides` array.
+    *   Updated the `LazyVGrid` routing logic to correctly navigate to `FivePillarsView()` when the card is tapped.
+*   **`FivePillarsView.swift`** (New)
+    *   Created a brand new SwiftUI view from scratch to display the 5 pillars (Shahada, Salah, Zakat, Sawm, Hajj).
+    *   Implemented the custom `PillarModel` struct for clean data mapping.
+
+## ✨ UI / UX Details
+To maintain consistency with the existing guide templates (e.g., the *Tahajjud Guide*), the following specific design choices were implemented:
+
+*   **Custom Navigation:** Hidden default Apple `NavigationBar` in favor of a custom floating white circular button with a black chevron for dismissal.
+*   **Color Palette:**
+    *   Background: Soft off-white/beige `Color(red: 0.97, green: 0.96, blue: 0.94)`.
+    *   Accents: Muted Gold `Color(red: 0.83, green: 0.66, blue: 0.53)` for the header icon and Primary Green `Color(red: 0.38, green: 0.48, blue: 0.43)` for the number badges.
+*   **Typography:** Heavily utilized `.serif` design on fonts (`.title3`, `.body`, `.subheadline`) to maintain the traditional, elegant feel.
+*   **Card Styling:** Stripped away heavy drop-shadows. Used pure white backgrounds with a delicate 1px border (`Color.black.opacity(0.06)`) for a crisp, paper-like UI.
+
+## 🛠 How to Test
+1. Pull the latest branch to your local machine.
+2. Open `QuranSphere.xcodeproj` / `QuranSphere.xcworkspace`.
+3. Press **Cmd + Shift + K** to clean the build folder.
+4. Press **Cmd + R** to run the app in the simulator.
+5. Navigate to the **Guides & Learning** section.
+6. Tap the new **5 Pillars** card and verify the routing, custom back button functionality, and UI alignment.
+
+## 📝 Notes for Future Development
+*   If adding more guides in the future, reference the layout structure in `FivePillarsView.swift` to ensure the custom navigation bar and background color logic remain consistent across all detail pages.
+
+# DevLog: QuranSphere iOS Utility App
+
+## Date: August 15, 2026
+### Milestone: Core Privacy-First Utility & Gamified Engagement Engine
+
+---
+
+### 🚀 Overview & Accomplishments
+Today marked a major leap forward in the architecture and user engagement loop of **QuranSphere**. We successfully integrated our long-term reading goal trackers, refined the home screen layout for maximum clarity, and established robust local notification workflows—all while staying strictly faithful to our core privacy commitment (zero user accounts, zero server-side databases, and full local persistence via `AppStorage` and `UserDefaults`).
+
+---
+
+### 🛠️ Key Technical Implementations
+
+1. **Unified Spiritual Progress Dashboard (`ContentView`)**
+   - Consolidated the home screen layout by merging the daily streaks, verse reading goals, hasanat tracker, and the newly introduced Khatmah tracking metrics into a single, cohesive card.
+   - Eliminated visual clutter and card fatigue on the main view while preserving instant visibility into daily milestones.
+
+2. **Khatmah Completion Manager & Interactive Sheet (`KhatmahManager.swift`)**
+   - Created a reactive `ObservableObject` manager backed by Combine and `@AppStorage` to track global reading progress against customized timeframe goals (e.g., 30, 60, or 90-day completion cycles).
+   - Designed a dedicated interactive configuration sheet (`KhatmahSettingsSheet`) allowing users to easily adjust, set, or reset their personal Khatmah pace on demand.
+
+3. **Uplifting Daily Push Notifications & Deep Link Routing**
+   - Expanded `NotificationManager` to schedule recurring local morning notifications featuring uplifting verses of the day.
+   - Built custom payload handling via `userInfo` dictionaries and `.onOpenURL` deep-linking logic, routing users directly from their morning push notification straight to the target Surah and verse reader.
+
+4. **Codebase Cleanup & Architecture Hardening**
+   - Resolved protocol conformance requirements and strict Swift import rules (`internal import Combine`).
+   - Cleaned up redundant UI subcomponents to ensure a smooth, native, high-performance user experience.
+
+---
+
+### 📱 Next Steps / Roadmap
+* **Background Audio & Lock Screen Controls:** Implement `AVAudioSession` categories to allow recitation audio to continue seamlessly when locking the device or switching apps.
+* **Custom Bookmark Tagging:** Build localized categorical sorting for saved verses to turn bookmarks into an organized personal spiritual journal.

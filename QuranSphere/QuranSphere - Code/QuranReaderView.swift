@@ -1,6 +1,13 @@
 import SwiftUI
 import AVFoundation
 
+// Struct to cache page data so we aren't calculating it on every frame drop
+struct MushafPage: Identifiable {
+    let id: Int
+    let text: String
+    let firstVerseIndex: Int
+}
+
 struct QuranReaderView: View {
     let surahNumber: Int
     let surahName: String
@@ -10,6 +17,7 @@ struct QuranReaderView: View {
     
     // Core Progress Trackers
     @AppStorage("isDarkMode") private var isDarkMode = false
+    @AppStorage("isFullPageMode") private var isFullPageMode = false
     @AppStorage("lastReadSurah") private var lastReadSurah = 1
     @AppStorage("lastReadSurahName") private var lastReadSurahName = "Al-Fatihah"
     @AppStorage("lastReadVerse") private var lastReadVerse = 1
@@ -26,7 +34,9 @@ struct QuranReaderView: View {
     @AppStorage("translationFontSize") private var translationFontSize: Double = 20.0
     
     @State private var surahVerses: [JSONVerse] = []
+    @State private var mushafPages: [MushafPage] = [] // Cached pages
     @State private var currentVerseIndex: Int = 0
+    @State private var currentPageIndex: Int = 0
     @State private var showSettings = false
     
     // Audio Player State
@@ -35,106 +45,164 @@ struct QuranReaderView: View {
     
     let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
     
-    private func cleanTranslationText(_ rawText: String) -> String {
-        var text = rawText.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
-        
-        // 1. Remove any digit attached immediately after a period, comma, or letter (e.g., ".2", ".3", "wombs.3", "Merciful.2")
-        text = text.replacingOccurrences(of: "([\\p{L}\\.,])\\d+", with: "$1", options: .regularExpression)
-        
-        // 2. Remove any remaining isolated digits or bracketed footnote numbers like [1] or (2)
-        text = text.replacingOccurrences(of: "\\[\\d+\\]|\\(\\d+\\)|\\b\\d+\\b", with: "", options: .regularExpression)
-        
-        // 3. Clean up any leftover double spaces or awkward punctuation gaps
-        text = text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
-        
-        return text.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-    
+    // MARK: - Body
     var body: some View {
         ZStack {
-            Group {
-                if isDarkMode {
-                    Color(red: 0.10, green: 0.12, blue: 0.11)
-                } else {
-                    Color(red: 0.97, green: 0.97, blue: 0.95)
-                }
-            }
-            .ignoresSafeArea()
+            backgroundLayer
             
-            if surahVerses.isEmpty {
+            if surahVerses.isEmpty || mushafPages.isEmpty {
                 ProgressView()
                     .tint(sageGreen)
             } else {
-                VStack(spacing: 0) {
-                    headerSection
-                    
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 20) {
-                            Spacer().frame(height: 12)
-                            
-                            // UNIFIED READING CARD (Arabic + Translation inside one clean container)
-                            VStack(spacing: 24) {
-                                verseHeader
-                                
-                                Text(surahVerses[currentVerseIndex].arabicText(for: preferredScript))
-                                    .font(.custom(arabicFont, size: arabicFontSize))
-                                    .multilineTextAlignment(.center)
-                                    .baselineOffset(10)
-                                    .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
-                                    .frame(maxWidth: .infinity, minHeight: 120)
-                                    .padding(.vertical, 8)
-                                    .id(arabicFont + preferredScript + "\(surahVerses[currentVerseIndex].id)")
-                                    .onAppear {
-                                        GamificationManager.shared.logVerseRead(arabicText: surahVerses[currentVerseIndex].arabicText(for: preferredScript))
-                                    }
-                                
-                                Divider()
-                                    .opacity(0.4)
-                                    .padding(.horizontal, 12)
-                                
-                                Text(cleanTranslationText(surahVerses[currentVerseIndex].translation))
-                                    .font(.system(size: translationFontSize, weight: .medium, design: .serif))
-                                    .foregroundColor(isDarkMode ? .white.opacity(0.8) : Color(red: 0.18, green: 0.23, blue: 0.20))
-                                    .multilineTextAlignment(.center)
-                                    .lineSpacing(8)
-                                    .frame(maxWidth: .infinity, alignment: .center)
-                                
-                                verseFooter
-                            }
-                            .padding(24)
-                            .background(isDarkMode ? Color(red: 0.15, green: 0.17, blue: 0.16) : Color.white)
-                            .cornerRadius(24)
-                            .shadow(color: Color.black.opacity(isDarkMode ? 0.3 : 0.04), radius: 12, x: 0, y: 6)
-                            .padding(.horizontal, 24)
-                            
-                            Spacer().frame(height: 20)
-                        }
-                    }
-                    
-                    bottomControls
-                }
-                .padding(.bottom, 16)
+                mainContentLayer
             }
         }
         .navigationBarHidden(true)
         .onAppear { loadVerses() }
+        .onChange(of: isFullPageMode) { _ in
+            currentPageIndex = getPageIndex(for: currentVerseIndex)
+        }
+        .onChange(of: preferredScript) { _ in
+            buildPages()
+        }
+        .onChange(of: arabicFontSize) { _ in
+            buildPages()
+            currentPageIndex = getPageIndex(for: currentVerseIndex)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .AVPlayerItemDidPlayToEndTime)) { _ in
-            if currentVerseIndex < surahVerses.count - 1 {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    currentVerseIndex += 1
-                    saveProgress()
-                }
-                let nextVerse = surahVerses[currentVerseIndex]
-                toggleAudio(for: nextVerse, forcePlay: true)
-            } else {
-                isPlayingAudio = false
-            }
+            handleAudioCompletion()
         }
         .sheet(isPresented: $showSettings) {
             ReaderSettingsSheet()
         }
     }
     
+    // MARK: - Separated Views
+    private var backgroundLayer: some View {
+        Group {
+            if isDarkMode {
+                Color(red: 0.10, green: 0.12, blue: 0.11)
+            } else {
+                Color(red: 0.97, green: 0.97, blue: 0.95)
+            }
+        }
+        .ignoresSafeArea()
+    }
+    
+    private var mainContentLayer: some View {
+        VStack(spacing: 0) {
+            headerSection
+            
+            if isFullPageMode {
+                fullPageView
+            } else {
+                verseByVerseView
+            }
+            
+            bottomControls
+        }
+        .padding(.bottom, 16)
+    }
+    
+    private var fullPageView: some View {
+        TabView(selection: $currentPageIndex) {
+            ForEach(mushafPages) { page in
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        HStack {
+                            Text("Surah \(surahName)")
+                            Spacer()
+                            Text("Page \(page.id + 1)")
+                        }
+                        .font(.system(.caption, design: .serif))
+                        .foregroundColor(isDarkMode ? .white.opacity(0.5) : .black.opacity(0.5))
+                        .padding(.bottom, 12)
+                        
+                        Divider()
+                            .background(isDarkMode ? Color.white.opacity(0.2) : Color.black.opacity(0.1))
+                            .padding(.bottom, 16)
+                        
+                        Text(page.text)
+                            .font(.custom(arabicFont, size: arabicFontSize))
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(20)
+                            .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
+                            .frame(maxWidth: .infinity, alignment: .top)
+                    }
+                    .padding(24)
+                    .background(isDarkMode ? Color(red: 0.15, green: 0.17, blue: 0.16) : Color(red: 0.99, green: 0.98, blue: 0.96))
+                    .cornerRadius(16)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color(red: 0.85, green: 0.81, blue: 0.73).opacity(isDarkMode ? 0.2 : 1.0), lineWidth: 1.5)
+                    )
+                    .shadow(color: Color.black.opacity(isDarkMode ? 0.4 : 0.06), radius: 10, x: 0, y: 5)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
+                }
+                .tag(page.id)
+                .environment(\.layoutDirection, .leftToRight)
+            }
+        }
+        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+        .environment(\.layoutDirection, .rightToLeft)
+        .onChange(of: currentPageIndex) { newPage in
+            if let targetPage = mushafPages.first(where: { $0.id == newPage }) {
+                currentVerseIndex = targetPage.firstVerseIndex
+                saveProgress()
+            }
+        }
+    }
+    
+    private var verseByVerseView: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: 20) {
+                Spacer().frame(height: 12)
+                
+                VStack(spacing: 24) {
+                    verseHeader
+                    
+                    let verse = surahVerses[currentVerseIndex]
+                    let fullArabicText = "\(verse.arabicText(for: preferredScript)) \u{06DD}\(getArabicNumeral(for: verse.verseNumber))"
+                    
+                    Text(fullArabicText)
+                        .font(.custom(arabicFont, size: arabicFontSize))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(16)
+                        .baselineOffset(10)
+                        .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
+                        .frame(maxWidth: .infinity, minHeight: 120)
+                        .padding(.vertical, 8)
+                        .id(arabicFont + preferredScript + "\(verse.id)")
+                        .onAppear {
+                            GamificationManager.shared.logVerseRead(arabicText: verse.arabicText(for: preferredScript))
+                        }
+                    
+                    Divider()
+                        .opacity(0.4)
+                        .padding(.horizontal, 12)
+                    
+                    Text(cleanTranslationText(verse.translation))
+                        .font(.system(size: translationFontSize, weight: .medium, design: .serif))
+                        .foregroundColor(isDarkMode ? .white.opacity(0.8) : Color(red: 0.18, green: 0.23, blue: 0.20))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(8)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    
+                    verseFooter
+                }
+                .padding(24)
+                .background(isDarkMode ? Color(red: 0.15, green: 0.17, blue: 0.16) : Color.white)
+                .cornerRadius(24)
+                .shadow(color: Color.black.opacity(isDarkMode ? 0.3 : 0.04), radius: 12, x: 0, y: 6)
+                .padding(.horizontal, 24)
+                
+                Spacer().frame(height: 20)
+            }
+        }
+    }
+    
+    // MARK: - Components
     private var verseHeader: some View {
         let verse = surahVerses[currentVerseIndex]
         let isBookmarked = bookmarkedIDs.contains(verse.id)
@@ -209,26 +277,29 @@ struct QuranReaderView: View {
                             .clipShape(Circle())
                     }
                     
-                    Button(action: {
-                        triggerHaptic()
-                        restartSurah()
-                    }) {
-                        Image(systemName: "arrow.counterclockwise")
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(currentVerseIndex > 0 ? (isDarkMode ? .white : .black) : .gray.opacity(0.3))
-                            .padding(10)
-                            .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
-                            .clipShape(Circle())
+                    if !isFullPageMode {
+                        Button(action: {
+                            triggerHaptic()
+                            restartSurah()
+                        }) {
+                            Image(systemName: "arrow.counterclockwise")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(currentVerseIndex > 0 ? (isDarkMode ? .white : .black) : .gray.opacity(0.3))
+                                .padding(10)
+                                .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                                .clipShape(Circle())
+                        }
+                        .disabled(currentVerseIndex == 0)
                     }
-                    .disabled(currentVerseIndex == 0)
                 }
                 
                 Spacer(minLength: 4)
                 
                 HStack(spacing: 8) {
-                    Image(systemName: "clock.fill")
+                    Image(systemName: "book.fill")
                         .foregroundColor(sageGreen)
-                    Text("Daily Reading")
+                        .font(.system(size: 14))
+                    Text(isFullPageMode ? "Mushaf Mode" : "Daily Reading")
                         .font(.system(.subheadline, design: .rounded)).bold()
                         .lineLimit(1)
                 }
@@ -269,84 +340,144 @@ struct QuranReaderView: View {
             .padding(.horizontal, 24)
             .padding(.top, 16)
             
-            let totalVerses = surahVerses.count
-            let currentVerseNum = currentVerseIndex + 1
-            let progress = Double(currentVerseNum) / Double(max(totalVerses, 1))
-            
-            VStack(spacing: 8) {
-                ProgressView(value: progress)
-                    .progressViewStyle(LinearProgressViewStyle(tint: sageGreen))
-                    .padding(.horizontal, 24)
+            if !isFullPageMode {
+                let totalVerses = surahVerses.count
+                let currentVerseNum = currentVerseIndex + 1
+                let progress = Double(currentVerseNum) / Double(max(totalVerses, 1))
                 
-                HStack {
-                    Menu {
-                        ForEach(0..<totalVerses, id: \.self) { index in
-                            Button(action: {
-                                triggerHaptic()
-                                stopAudio()
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    currentVerseIndex = index
-                                    saveProgress()
+                VStack(spacing: 8) {
+                    ProgressView(value: progress)
+                        .progressViewStyle(LinearProgressViewStyle(tint: sageGreen))
+                        .padding(.horizontal, 24)
+                    
+                    HStack {
+                        Menu {
+                            ForEach(0..<totalVerses, id: \.self) { index in
+                                Button(action: {
+                                    triggerHaptic()
+                                    stopAudio()
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        currentVerseIndex = index
+                                        saveProgress()
+                                    }
+                                }) {
+                                    Text("Verse \(index + 1)")
                                 }
-                            }) {
-                                Text("Verse \(index + 1)")
                             }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text("\(currentVerseNum) / \(totalVerses)")
+                                    .font(.system(.caption, design: .rounded)).bold()
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 9, weight: .bold))
+                            }
+                            .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                            .clipShape(Capsule())
                         }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text("\(currentVerseNum) / \(totalVerses)")
-                                .font(.system(.caption, design: .rounded)).bold()
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 9, weight: .bold))
-                        }
-                        .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
-                        .clipShape(Capsule())
+                        
+                        Spacer()
+                        
+                        Text("\(totalVerses - currentVerseNum) Verses left")
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundColor(.gray)
+                        
+                        Spacer()
+                        
+                        Text("\(Int(progress * 100))%")
+                            .font(.system(.caption, design: .rounded)).bold()
+                            .foregroundColor(.gray)
                     }
-                    
-                    Spacer()
-                    
-                    Text("\(totalVerses - currentVerseNum) Verses left")
-                        .font(.system(.caption, design: .rounded))
-                        .foregroundColor(.gray)
-                    
-                    Spacer()
-                    
-                    Text("\(Int(progress * 100))%")
-                        .font(.system(.caption, design: .rounded)).bold()
-                        .foregroundColor(.gray)
+                    .padding(.horizontal, 24)
                 }
-                .padding(.horizontal, 24)
+            } else {
+                let totalPages = max(1, mushafPages.count)
+                let currentPageNum = currentPageIndex + 1
+                let progress = Double(currentPageNum) / Double(totalPages)
+                
+                VStack(spacing: 8) {
+                    ProgressView(value: progress)
+                        .progressViewStyle(LinearProgressViewStyle(tint: sageGreen))
+                        .padding(.horizontal, 24)
+                    
+                    HStack {
+                        Menu {
+                            ForEach(0..<totalPages, id: \.self) { index in
+                                Button(action: {
+                                    triggerHaptic()
+                                    stopAudio()
+                                    withAnimation(.easeInOut(duration: 0.2)) {
+                                        currentPageIndex = index
+                                        if let targetPage = mushafPages.first(where: { $0.id == index }) {
+                                            currentVerseIndex = targetPage.firstVerseIndex
+                                        }
+                                        saveProgress()
+                                    }
+                                }) {
+                                    Text("Page \(index + 1)")
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text("\(currentPageNum) / \(totalPages)")
+                                    .font(.system(.caption, design: .rounded)).bold()
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 9, weight: .bold))
+                            }
+                            .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                            .clipShape(Capsule())
+                        }
+                        
+                        Spacer()
+                        
+                        Text("\(totalPages - currentPageNum) Pages left")
+                            .font(.system(.caption, design: .rounded))
+                            .foregroundColor(.gray)
+                        
+                        Spacer()
+                        
+                        Text("\(Int(progress * 100))%")
+                            .font(.system(.caption, design: .rounded)).bold()
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 8)
+                }
             }
         }
     }
     
     private var bottomControls: some View {
         HStack {
-            Button(action: {
-                triggerHaptic()
-                if currentVerseIndex > 0 {
-                    stopAudio()
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        currentVerseIndex -= 1
-                        saveProgress()
+            if !isFullPageMode {
+                Button(action: {
+                    triggerHaptic()
+                    if currentVerseIndex > 0 {
+                        stopAudio()
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            currentVerseIndex -= 1
+                            saveProgress()
+                        }
                     }
+                }) {
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(currentVerseIndex > 0 ? (isDarkMode ? .white : .black) : .gray.opacity(0.3))
+                        .frame(width: 60, height: 50)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 25)
+                                .stroke(currentVerseIndex > 0 ? .gray.opacity(0.3) : .clear, lineWidth: 1)
+                        )
                 }
-            }) {
-                Image(systemName: "arrow.left")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(currentVerseIndex > 0 ? (isDarkMode ? .white : .black) : .gray.opacity(0.3))
-                    .frame(width: 60, height: 50)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 25)
-                            .stroke(currentVerseIndex > 0 ? .gray.opacity(0.3) : .clear, lineWidth: 1)
-                    )
+                .disabled(currentVerseIndex == 0)
+                
+                Spacer()
             }
-            .disabled(currentVerseIndex == 0)
-            
-            Spacer()
             
             Button(action: {
                 triggerHaptic()
@@ -356,47 +487,152 @@ struct QuranReaderView: View {
                 Text("I'm Done")
                     .font(.system(.headline, design: .rounded))
                     .foregroundColor(isDarkMode ? .black : .white)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: isFullPageMode ? .infinity : .infinity)
                     .frame(height: 50)
                     .background(isDarkMode ? Color.white : Color(red: 0.18, green: 0.23, blue: 0.20))
                     .cornerRadius(25)
             }
             
-            Spacer()
-            
-            Button(action: {
-                triggerHaptic()
-                if currentVerseIndex < surahVerses.count - 1 {
-                    stopAudio()
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        currentVerseIndex += 1
-                        saveProgress()
+            if !isFullPageMode {
+                Spacer()
+                
+                Button(action: {
+                    triggerHaptic()
+                    if currentVerseIndex < surahVerses.count - 1 {
+                        stopAudio()
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            currentVerseIndex += 1
+                            saveProgress()
+                        }
                     }
+                }) {
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundColor(currentVerseIndex < surahVerses.count - 1 ? (isDarkMode ? .black : .white) : .gray.opacity(0.3))
+                        .frame(width: 60, height: 50)
+                        .background(currentVerseIndex < surahVerses.count - 1 ? sageGreen : sageGreen.opacity(0.2))
+                        .cornerRadius(25)
                 }
-            }) {
-                Image(systemName: "arrow.right")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(currentVerseIndex < surahVerses.count - 1 ? (isDarkMode ? .black : .white) : .gray.opacity(0.3))
-                    .frame(width: 60, height: 50)
-                    .background(currentVerseIndex < surahVerses.count - 1 ? sageGreen : sageGreen.opacity(0.2))
-                    .cornerRadius(25)
+                .disabled(currentVerseIndex == surahVerses.count - 1)
             }
-            .disabled(currentVerseIndex == surahVerses.count - 1)
         }
         .padding(.horizontal, 24)
         .padding(.top, 16)
+    }
+    
+    // MARK: - Helper Methods
+    private func buildPages() {
+        // Dynamically measure device screen
+        let screenWidth = UIScreen.main.bounds.width
+        let screenHeight = UIScreen.main.bounds.height
+        
+        // Let's explicitly calculate safe area and exact padding:
+        // Top Header: ~100 | Bottom Bar: ~82 | Card Padding: ~80 | Card Header: ~50 | Safe Area: ~80
+        // Total exact overhead is around 392. Using 340 ensures we don't overestimate and cause dead space.
+        let verticalOverhead: CGFloat = 340
+        let horizontalOverhead: CGFloat = 88
+        
+        let usableHeight = max(200, screenHeight - verticalOverhead)
+        let usableWidth = max(200, screenWidth - horizontalOverhead)
+        
+        let lineHeight = (arabicFontSize * 1.4) + 20
+        let maxLines = max(1, Int(usableHeight / lineHeight))
+        
+        let avgCharWidth = arabicFontSize * 0.32
+        let charsPerLine = max(1, Int(usableWidth / avgCharWidth))
+        
+        // 90% fill rate to prevent the very last line from clipping bounds
+        let maxCharactersPerPage = max(50, Int(Double(maxLines * charsPerLine) * 0.90))
+        
+        var newPages: [MushafPage] = []
+        var currentPageVerses: [JSONVerse] = []
+        var currentCharacterCount = 0
+        var pageIndex = 0
+        
+        for verse in surahVerses {
+            let textLength = verse.arabicText(for: preferredScript).count
+            
+            if currentCharacterCount + textLength > maxCharactersPerPage && !currentPageVerses.isEmpty {
+                let pageText = generatePageText(for: currentPageVerses)
+                let firstVerseIdx = surahVerses.firstIndex(where: { $0.id == currentPageVerses.first!.id }) ?? 0
+                
+                newPages.append(MushafPage(id: pageIndex, text: pageText, firstVerseIndex: firstVerseIdx))
+                
+                currentPageVerses = []
+                currentCharacterCount = 0
+                pageIndex += 1
+            }
+            
+            currentPageVerses.append(verse)
+            currentCharacterCount += textLength
+        }
+        
+        if !currentPageVerses.isEmpty {
+            let pageText = generatePageText(for: currentPageVerses)
+            let firstVerseIdx = surahVerses.firstIndex(where: { $0.id == currentPageVerses.first!.id }) ?? 0
+            newPages.append(MushafPage(id: pageIndex, text: pageText, firstVerseIndex: firstVerseIdx))
+        }
+        
+        mushafPages = newPages
+    }
+    
+    private func getPageIndex(for verseIndex: Int) -> Int {
+        return mushafPages.last(where: { $0.firstVerseIndex <= verseIndex })?.id ?? 0
+    }
+    
+    private func generatePageText(for verses: [JSONVerse]) -> String {
+        verses.map { verse in
+            let text = verse.arabicText(for: preferredScript)
+            let num = getArabicNumeral(for: verse.verseNumber)
+            return "\(text) \u{06DD}\(num) "
+        }.joined(separator: " ")
+    }
+    
+    private func cleanTranslationText(_ rawText: String) -> String {
+        var text = rawText.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
+        text = text.replacingOccurrences(of: "([\\p{L}\\.,])\\d+", with: "$1", options: .regularExpression)
+        text = text.replacingOccurrences(of: "\\[\\d+\\]|\\(\\d+\\)|\\b\\d+\\b", with: "", options: .regularExpression)
+        text = text.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+    
+    private func getArabicNumeral(for number: Int) -> String {
+        let arabicDigits = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"]
+        return String(number).compactMap { char in
+            if let digit = char.wholeNumberValue {
+                return arabicDigits[digit]
+            }
+            return String(char)
+        }.joined()
+    }
+    
+    private func handleAudioCompletion() {
+        if !isFullPageMode, currentVerseIndex < surahVerses.count - 1 {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                currentVerseIndex += 1
+                saveProgress()
+            }
+            let nextVerse = surahVerses[currentVerseIndex]
+            toggleAudio(for: nextVerse, forcePlay: true)
+        } else {
+            isPlayingAudio = false
+        }
     }
     
     private func loadVerses() {
         let filtered = quranManager.verses.filter { $0.surahNumber == surahNumber }
         surahVerses = filtered.sorted { $0.verseNumber < $1.verseNumber }
         
+        buildPages()
+        
         if lastReadSurah == surahNumber {
             if let index = surahVerses.firstIndex(where: { $0.verseNumber == lastReadVerse }) {
                 currentVerseIndex = index
+                currentPageIndex = getPageIndex(for: currentVerseIndex)
             }
         } else {
             currentVerseIndex = 0
+            currentPageIndex = 0
         }
     }
     
@@ -415,6 +651,7 @@ struct QuranReaderView: View {
             stopAudio()
             withAnimation(.easeInOut(duration: 0.3)) {
                 currentVerseIndex = 0
+                currentPageIndex = 0
                 saveProgress()
             }
         }
@@ -485,10 +722,11 @@ struct QuranReaderView: View {
     }
 }
 
-// ReaderSettingsSheet remains unchanged below...
+// MARK: - ReaderSettingsSheet
 struct ReaderSettingsSheet: View {
     @Environment(\.dismiss) private var dismiss
     @AppStorage("isDarkMode") private var isDarkMode = false
+    @AppStorage("isFullPageMode") private var isFullPageMode = false
     @AppStorage("arabicFont") private var arabicFont = "KFGQPCUthmanTahaNaskh"
     @AppStorage("preferredScript") private var preferredScript = "uthmani"
     @AppStorage("arabicFontSize") private var arabicFontSize: Double = 38.0
@@ -550,6 +788,21 @@ struct ReaderSettingsSheet: View {
                             .tint(sageGreen)
                             .padding(.vertical, 16)
                             .padding(.horizontal, 4)
+                            
+                            Divider().background(Color.gray.opacity(0.2))
+                            
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Reading Mode")
+                                    .font(.system(.body, design: .serif))
+                                    .foregroundColor(isDarkMode ? .white : .black)
+                                
+                                Picker("Reading Mode", selection: $isFullPageMode) {
+                                    Text("Verse by Verse").tag(false)
+                                    Text("Full Page").tag(true)
+                                }
+                                .pickerStyle(SegmentedPickerStyle())
+                            }
+                            .padding(.vertical, 16)
                             
                             Divider().background(Color.gray.opacity(0.2))
                             
@@ -625,6 +878,8 @@ struct ReaderSettingsSheet: View {
                                     Text("A").font(.system(size: 24))
                                 }
                                 .foregroundColor(.gray)
+                                .opacity(isFullPageMode ? 0.5 : 1.0)
+                                .disabled(isFullPageMode)
                             }
                             .padding(.vertical, 16)
                         }
