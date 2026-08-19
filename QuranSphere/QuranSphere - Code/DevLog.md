@@ -1,4 +1,4 @@
-# Development Log: [App Name]
+# Development Log: [QuranSphere]
 
 ## 📅 July 16, 2026
 ### Today's Milestones
@@ -377,3 +377,44 @@ Today marked a major leap forward in the architecture and user engagement loop o
 ### 📱 Next Steps / Roadmap
 * **Background Audio & Lock Screen Controls:** Implement `AVAudioSession` categories to allow recitation audio to continue seamlessly when locking the device or switching apps.
 * **Custom Bookmark Tagging:** Build localized categorical sorting for saved verses to turn bookmarks into an organized personal spiritual journal.
+
+
+-----
+
+x🕌 Masjid Finder — Developer Documentation
+Overview
+The Masjid Finder is a native SwiftUI feature within the QuranSphere app that locates the closest mosques to the user's current GPS coordinates. It utilizes Apple's native MapKit and CoreLocation frameworks to provide a completely free, highly performant, and privacy-respecting directory without relying on third-party API keys.
+Architecture & Tech Stack
+•    Frameworks: SwiftUI, MapKit, CoreLocation, Combine
+•    Architecture Pattern: MVVM (Model-View-ViewModel)
+•    Location Tracking: Inherits the user's last known location from the existing QiblaCompassManager.
+•    Distance Formatting: Utilizes MKDistanceFormatter for automatic locale-based unit conversion (Miles vs. Kilometers).
+Component Breakdown
+1. MasjidFinderManager.swift (The ViewModel)
+Handles the business logic, API requests to Apple Maps, and data sanitization.
+•    MKLocalSearch: Triggers a natural language query for "Mosque" within a 10km radius of the user.
+•    Data Sanitization: Apple Maps often categorizes general places of worship under the same umbrella. The manager includes a strict client-side filter (excludedWords) that actively intercepts and removes churches, chapels, and temples from the results before they reach the UI.
+•    Sorting: Automatically calculates the straight-line distance using CLLocation.distance(from:) and sorts the array from nearest to farthest.
+2. MasjidFinderView.swift (The Main Screen)
+The primary UI container featuring a split-screen design.
+•    Live Map: An interactive Map view bound to MKCoordinateRegion, displaying custom MapAnnotation pins for every discovered mosque.
+•    Interactive List: A LazyVStack nested inside a ScrollView that displays the data beneath the map.
+•    Custom Bottom Sheet: Uses SwiftUI's native .sheet modifier with .presentationDetents([.height(280)]) to present a smooth, native Action Sheet for navigation selection.
+•    Custom Corners: Utilizes a custom UIBezierPath extension to round only the top corners of the list container.
+3. MosqueCardView.swift (The UI Component)
+A sleek, photo-less directory card designed for maximum readability and a premium feel.
+•    Design: Replaces bulky placeholder photos with a custom gradient LinearGradient icon block (moon.stars.fill).
+•    Interactivity: The entire card acts as a button (PlainButtonStyle) which triggers a callback to the parent view to launch the navigation sheet.
+Navigation & Deep Linking
+To provide a premium user experience, the app offers three routing options when a user taps to get directions.
+•    Apple Maps: Launched natively using MKMapItem.openInMaps.
+•    Google Maps & Waze: Launched using Universal Links (URL Schemes). If the app is installed on the user's device, it will deep-link directly into the app with the destination coordinates pre-filled. If not, it safely falls back to Safari.
+Known Limitations & Design Decisions
+1. Missing Photos
+Limitation: Apple MapKit does not natively provide user-submitted photos through MKLocalSearch. While MKLookAroundSnapshotter was initially tested, coverage outside major cities is poor, resulting in mostly empty UI blocks.
+Solution: We pivoted to a "Premium Directory" UI, utilizing high-quality typography, gradient iconography, and a live map to make the UI engaging without relying on missing photography.
+2. Missing Opening Hours
+Limitation: Apple strictly prohibits developers from pulling business hours via the free MapKit API.
+Solution: Fake placeholder data (e.g., "Open 24 Hours") was removed entirely to prevent misleading users.
+Future Roadmap
+If live photos and accurate opening/closing times become a strict business requirement in the future, the MasjidFinderManager should be refactored to query the Google Places API (New) instead of MKLocalSearch. The UI is already built to support this transition smoothly.

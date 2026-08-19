@@ -6,10 +6,11 @@
 import SwiftUI
 internal import CoreLocation
 
-// MARK: - Tab Enum
+// MARK: - Tab Enum (Updated with Masjids)
 enum QiblaTab: String, Hashable {
     case compass
     case prayers
+    case masjids
 }
 
 struct QiblaCompassView: View {
@@ -77,10 +78,11 @@ struct QiblaCompassView: View {
     var body: some View {
         VStack(spacing: 24) {
             
-            // MARK: - Custom Sliding Toggle
+            // MARK: - Custom 3-Way Sliding Toggle
             HStack(spacing: 0) {
-                toggleButton(title: "Qibla Finder", tab: .compass)
-                toggleButton(title: "Prayer Times", tab: .prayers)
+                toggleButton(title: "Qibla", tab: .compass)
+                toggleButton(title: "Prayers", tab: .prayers)
+                toggleButton(title: "Masjids", tab: .masjids)
             }
             .padding(4)
             .background(isDarkMode ? Color.white.opacity(0.1) : Color.gray.opacity(0.12))
@@ -92,8 +94,11 @@ struct QiblaCompassView: View {
             if selectedTab == .compass {
                 compassPage
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
-            } else {
+            } else if selectedTab == .prayers {
                 prayersPage
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            } else {
+                masjidsPage
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             }
             
@@ -307,6 +312,14 @@ struct QiblaCompassView: View {
     private var prayersPage: some View {
         VStack {
             PrayerTimesView(location: compassManager.lastLocation)
+                .padding(.top, 8)
+        }
+    }
+    
+    // MARK: - Page 3: Masjid Finder View
+    private var masjidsPage: some View {
+        VStack {
+            MasjidFinderView(userLocation: compassManager.lastLocation)
                 .padding(.top, 8)
         }
     }

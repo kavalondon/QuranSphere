@@ -6,6 +6,7 @@
 import Foundation
 internal import CoreLocation
 internal import Combine
+import WidgetKit // 🌟 ADDED: Required to update the widget
 
 // MARK: - API Models
 struct PrayerApiResponse: Codable {
@@ -44,7 +45,7 @@ class PrayerTimesManager: ObservableObject {
     @Published var errorMessage: String?
     @Published var nextPrayerName: String?
     
-    // 🌟 THE FIX: Updated cache key to force a fresh pull with the accurate settings
+    // THE FIX: Updated cache key to force a fresh pull with the accurate settings
     private let cacheKey = "QuranSphere_CachedPrayerTimes_v2"
     
     func fetchPrayerTimes(for location: CLLocation, forceRefresh: Bool = false) async {
@@ -77,12 +78,16 @@ class PrayerTimesManager: ObservableObject {
             if location.distance(from: cachedLocation) < 10000 {
                 self.timings = cachedData.timings
                 self.calculateNextPrayer(from: cachedData.timings)
+                
+                // 🌟 ADDED: Sync cached data to widget immediately
+                self.syncDataToWidget(timings: cachedData.timings, nextPrayer: self.nextPrayerName ?? "Fajr")
+                
                 self.isLoading = false
                 return
             }
         }
         
-        // 3. 🌟 THE FIX: AUTOPILOT & HIGH LATITUDE LOGIC
+        // 3. AUTOPILOT & HIGH LATITUDE LOGIC
         var methodParameter = ""
         var highLatitudeParameter = ""
         var tuneParameter = ""
@@ -123,6 +128,9 @@ class PrayerTimesManager: ObservableObject {
             let newCache = CachedPrayerData(dateString: dateString, latitude: lat, longitude: lon, school: school, method: method, isAutopilot: isAutopilot, timings: fetchedTimings)
             saveToCache(newCache)
             
+            // 🌟 ADDED: Sync newly fetched data to widget
+            self.syncDataToWidget(timings: fetchedTimings, nextPrayer: self.nextPrayerName ?? "Fajr")
+            
         } catch {
             if self.timings == nil {
                 self.errorMessage = "Unable to fetch times. Check your connection."
@@ -160,6 +168,27 @@ class PrayerTimesManager: ObservableObject {
             }
         }
         self.nextPrayerName = "Fajr"
+    }
+    
+    // MARK: - Widget Sync
+    // 🌟 ADDED: Function to push the live data to the widget
+    private func syncDataToWidget(timings: PrayerTimings, nextPrayer: String) {
+        // 🚨 IMPORTANT: Replace this string with your exact App Group ID from Xcode
+        let appGroupID = "group.com.yourname.Quransphere"
+        
+        if let sharedDefaults = UserDefaults(suiteName: appGroupID) {
+            sharedDefaults.set(timings.Fajr, forKey: "FajrTime")
+            sharedDefaults.set(timings.Sunrise, forKey: "SunriseTime")
+            sharedDefaults.set(timings.Dhuhr, forKey: "DhuhrTime")
+            sharedDefaults.set(timings.Asr, forKey: "AsrTime")
+            sharedDefaults.set(timings.Maghrib, forKey: "MaghribTime")
+            sharedDefaults.set(timings.Isha, forKey: "IshaTime")
+            
+            sharedDefaults.set(nextPrayer, forKey: "NextPrayerName")
+        }
+        
+        // Tells the widget to redraw immediately
+        WidgetCenter.shared.reloadTimelines(ofKind: "QuransphereWidget")
     }
     
     // MARK: - Caching

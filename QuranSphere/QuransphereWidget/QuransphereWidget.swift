@@ -19,20 +19,53 @@ struct PrayerEntry: TimelineEntry {
 
 // 2. Standalone Timeline Provider
 struct PrayerTimelineProvider: TimelineProvider {
+    // Fallback/dummy timings for placeholders and fresh installs
     let dummyTimings = PrayerTimings(Fajr: "03:59", Sunrise: "06:00", Dhuhr: "13:19", Asr: "18:19", Maghrib: "20:45", Isha: "21:49")
+    
+    // 🌟 Make sure this exactly matches your App Group ID in Xcode
+    let appGroupID = "group.com.yourname.Quransphere"
     
     func placeholder(in context: Context) -> PrayerEntry {
         PrayerEntry(date: Date(), timings: dummyTimings, nextPrayerName: "Dhuhr")
     }
 
     func getSnapshot(in context: Context, completion: @escaping (PrayerEntry) -> ()) {
-        let entry = PrayerEntry(date: Date(), timings: dummyTimings, nextPrayerName: "Dhuhr")
+        // Try to show actual data in the widget gallery if available
+        let sharedDefaults = UserDefaults(suiteName: appGroupID)
+        let fajr = sharedDefaults?.string(forKey: "FajrTime") ?? dummyTimings.Fajr
+        let sunrise = sharedDefaults?.string(forKey: "SunriseTime") ?? dummyTimings.Sunrise
+        let dhuhr = sharedDefaults?.string(forKey: "DhuhrTime") ?? dummyTimings.Dhuhr
+        let asr = sharedDefaults?.string(forKey: "AsrTime") ?? dummyTimings.Asr
+        let maghrib = sharedDefaults?.string(forKey: "MaghribTime") ?? dummyTimings.Maghrib
+        let isha = sharedDefaults?.string(forKey: "IshaTime") ?? dummyTimings.Isha
+        let nextPrayer = sharedDefaults?.string(forKey: "NextPrayerName") ?? "Dhuhr"
+        
+        let timings = PrayerTimings(Fajr: fajr, Sunrise: sunrise, Dhuhr: dhuhr, Asr: asr, Maghrib: maghrib, Isha: isha)
+        let entry = PrayerEntry(date: Date(), timings: timings, nextPrayerName: nextPrayer)
+        
         completion(entry)
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-        let entry = PrayerEntry(date: Date(), timings: dummyTimings, nextPrayerName: "Dhuhr")
-        let timeline = Timeline(entries: [entry], policy: .never)
+        // Fetch live data shared by the main app
+        let sharedDefaults = UserDefaults(suiteName: appGroupID)
+        
+        let fajr = sharedDefaults?.string(forKey: "FajrTime") ?? dummyTimings.Fajr
+        let sunrise = sharedDefaults?.string(forKey: "SunriseTime") ?? dummyTimings.Sunrise
+        let dhuhr = sharedDefaults?.string(forKey: "DhuhrTime") ?? dummyTimings.Dhuhr
+        let asr = sharedDefaults?.string(forKey: "AsrTime") ?? dummyTimings.Asr
+        let maghrib = sharedDefaults?.string(forKey: "MaghribTime") ?? dummyTimings.Maghrib
+        let isha = sharedDefaults?.string(forKey: "IshaTime") ?? dummyTimings.Isha
+        let nextPrayer = sharedDefaults?.string(forKey: "NextPrayerName") ?? "Dhuhr"
+        
+        let liveTimings = PrayerTimings(Fajr: fajr, Sunrise: sunrise, Dhuhr: dhuhr, Asr: asr, Maghrib: maghrib, Isha: isha)
+        let entry = PrayerEntry(date: Date(), timings: liveTimings, nextPrayerName: nextPrayer)
+        
+        // 🌟 Fix: Automatically refresh the widget every hour as a fallback.
+        // Note: The main app should still call WidgetCenter.shared.reloadTimelines(ofKind: "QuransphereWidget") when times change.
+        let refreshDate = Calendar.current.date(byAdding: .hour, value: 1, to: Date())!
+        let timeline = Timeline(entries: [entry], policy: .after(refreshDate))
+        
         completion(timeline)
     }
 }
@@ -110,7 +143,7 @@ struct QuransphereWidgetEntryView : View {
                 }
             }
         }
-        // 🌟 ADDED: Tells the widget what URL to open when tapped
+        // Tells the widget what URL to open when tapped
         .widgetURL(URL(string: "quransphere://qibla"))
     }
 }
@@ -127,7 +160,6 @@ struct MiniPrayerColumn: View {
         VStack(spacing: 8) {
             Text(name)
                 .font(.system(size: 12, weight: .medium, design: .serif))
-                // 🌟 FIX: Explicitly writing Color.white and Color.black
                 .foregroundColor(isActive ? Color.pillarsAccentGold : (colorScheme == .dark ? Color.white : Color.black).opacity(0.9))
             
             // The subtle dot bridging the name and time
@@ -137,7 +169,6 @@ struct MiniPrayerColumn: View {
             
             Text(time)
                 .font(.system(size: 12, design: .rounded))
-                // 🌟 FIX: Explicitly writing Color.white and Color.black
                 .foregroundColor(isActive ? Color.pillarsAccentGold : (colorScheme == .dark ? Color.white : Color.black).opacity(0.7))
         }
     }

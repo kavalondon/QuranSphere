@@ -60,6 +60,9 @@
 		5ED0BA50302E8EC500917140 /* FivePillarsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED0BA4F302E8EC100917140 /* FivePillarsView.swift */; };
 		5ED0BA52302FF69A00917140 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED0BA51302FF69500917140 /* NotificationManager.swift */; };
 		5ED0BA54302FF8ED00917140 /* KhatmahManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED0BA53302FF8EB00917140 /* KhatmahManager.swift */; };
+		5ED0BA5730353AFF00917140 /* MasjidFinderManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED0BA5630353AFC00917140 /* MasjidFinderManager.swift */; };
+		5ED0BA5930353B1800917140 /* MosqueCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED0BA5830353B1700917140 /* MosqueCardView.swift */; };
+		5ED0BA5B30353B2F00917140 /* MasjidFinderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ED0BA5A30353B2E00917140 /* MasjidFinderView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -155,6 +158,10 @@
 		5ED0BA4F302E8EC100917140 /* FivePillarsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FivePillarsView.swift; sourceTree = "<group>"; };
 		5ED0BA51302FF69500917140 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
 		5ED0BA53302FF8EB00917140 /* KhatmahManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KhatmahManager.swift; sourceTree = "<group>"; };
+		5ED0BA553035388E00917140 /* QuranSphere.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = QuranSphere.entitlements; path = QuranSphere/QuranSphere.entitlements; sourceTree = "<group>"; };
+		5ED0BA5630353AFC00917140 /* MasjidFinderManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasjidFinderManager.swift; sourceTree = "<group>"; };
+		5ED0BA5830353B1700917140 /* MosqueCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MosqueCardView.swift; sourceTree = "<group>"; };
+		5ED0BA5A30353B2E00917140 /* MasjidFinderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasjidFinderView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -225,6 +232,7 @@
 		5E2BDBAC3007EB5C007BD194 = {
 			isa = PBXGroup;
 			children = (
+				5ED0BA553035388E00917140 /* QuranSphere.entitlements */,
 				5E854DB2300CEEF400E627E6 /* Info.plist */,
 				5E854DA5300C564F00E627E6 /* QuranSphere - Code */,
 				5E2BDBC53007EB63007BD194 /* QuranSphereTests */,
@@ -250,6 +258,9 @@
 		5E854DA5300C564F00E627E6 /* QuranSphere - Code */ = {
 			isa = PBXGroup;
 			children = (
+				5ED0BA5A30353B2E00917140 /* MasjidFinderView.swift */,
+				5ED0BA5830353B1700917140 /* MosqueCardView.swift */,
+				5ED0BA5630353AFC00917140 /* MasjidFinderManager.swift */,
 				5ED0BA53302FF8EB00917140 /* KhatmahManager.swift */,
 				5ED0BA51302FF69500917140 /* NotificationManager.swift */,
 				5ED0BA4F302E8EC100917140 /* FivePillarsView.swift */,
@@ -507,6 +518,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5ED0BA5930353B1800917140 /* MosqueCardView.swift in Sources */,
 				5E854D92300C55AA00E627E6 /* ContentView.swift in Sources */,
 				5E854D93300C55AA00E627E6 /* SettingsView.swift in Sources */,
 				5ECB33A4302377DD00E195A1 /* DailyDua.swift in Sources */,
@@ -527,6 +539,7 @@
 				5E14953C30127515003D68DC /* WuduGuideView.swift in Sources */,
 				5E14953830123351003D68DC /* TahajjudGuideView.swift in Sources */,
 				5E854D99300C55AA00E627E6 /* Color+Palette.swift in Sources */,
+				5ED0BA5730353AFF00917140 /* MasjidFinderManager.swift in Sources */,
 				5E14953E301283FE003D68DC /* SalahStepsView.swift in Sources */,
 				5ECB33A03023705B00E195A1 /* ThemeSettingsView.swift in Sources */,
 				5E854D9A300C55AA00E627E6 /* SurahListView.swift in Sources */,
@@ -538,6 +551,7 @@
 				5E854D9C300C55AA00E627E6 /* QiblaManager.swift in Sources */,
 				5E14953A30127395003D68DC /* PrayerGuideListView.swift in Sources */,
 				5E854D9D300C55AA00E627E6 /* MoodBannerView.swift in Sources */,
+				5ED0BA5B30353B2F00917140 /* MasjidFinderView.swift in Sources */,
 				5ED0BA4A302DB9BB00917140 /* IstikharaGuideView.swift in Sources */,
 				5E149530300DA47A003D68DC /* BookmarksView.swift in Sources */,
 				5ED0BA52302FF69A00917140 /* NotificationManager.swift in Sources */,

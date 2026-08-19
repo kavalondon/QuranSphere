@@ -15,6 +15,9 @@ struct PrayerTimesView: View {
     @State private var showSettings = false
     @State private var currentDate = Date() // Allows toggling days like the reference layout
     
+    // 🌟 ADDED: State to hold the dynamic city name
+    @State private var cityName: String = "Locating..."
+    
     let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
     let accentGold = Color(red: 0.83, green: 0.67, blue: 0.51)
     
@@ -62,7 +65,9 @@ struct PrayerTimesView: View {
                             Text("|")
                             Image(systemName: "location.fill")
                                 .font(.system(size: 10))
-                            Text("Rochdale")
+                            
+                            // 🌟 CHANGED: Now uses the dynamic city name state instead of "Rochdale"
+                            Text(cityName)
                         }
                         .font(.system(.caption, design: .rounded))
                         .foregroundColor(sageGreen)
@@ -144,15 +149,21 @@ struct PrayerTimesView: View {
         .onChange(of: location) { newLocation in
             if let newLocation = newLocation {
                 Task { await prayerManager.fetchPrayerTimes(for: newLocation) }
+                // 🌟 ADDED: Update the city name when location changes
+                fetchCityName(for: newLocation)
             }
         }
         .onAppear {
             if let location = location {
                 Task { await prayerManager.fetchPrayerTimes(for: location) }
+                // 🌟 ADDED: Fetch city name on initial load
+                fetchCityName(for: location)
             }
             PrayerNotificationManager.shared.requestPermission()
         }
     }
+    
+    // MARK: - Helper Methods
     
     private func formattedDate(_ date: Date) -> String {
         let formatter = DateFormatter()
@@ -163,6 +174,20 @@ struct PrayerTimesView: View {
     private func changeDay(by value: Int) {
         if let newDate = Calendar.current.date(byAdding: .day, value: value, to: currentDate) {
             currentDate = newDate
+        }
+    }
+    
+    // 🌟 ADDED: Reverse geocoding function to get the actual city name from coordinates
+    private func fetchCityName(for location: CLLocation) {
+        let geocoder = CLGeocoder()
+        geocoder.reverseGeocodeLocation(location) { placemarks, error in
+            if let placemark = placemarks?.first {
+                // Try locality (City) first, fallback to subAdministrativeArea (County) or "Unknown"
+                let newCityName = placemark.locality ?? placemark.subAdministrativeArea ?? "Unknown Location"
+                DispatchQueue.main.async {
+                    self.cityName = newCityName
+                }
+            }
         }
     }
 }
