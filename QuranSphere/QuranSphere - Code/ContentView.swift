@@ -7,16 +7,25 @@ enum Tab {
     case settings
 }
 
+enum HomeTab: String, Hashable {
+    case daily = "Daily"
+    case khatmah = "Khatmah"
+}
+
 struct ContentView: View {
     @EnvironmentObject var quranManager: LocalQuranManager
     @EnvironmentObject var khatmahManager: KhatmahManager
     
-    // MARK: - App Storage
+    // MARK: - App Storage (Casual Reading)
     @AppStorage("isDarkMode") private var isDarkMode = false
     @AppStorage("lastReadSurah") private var lastReadSurah = 1
     @AppStorage("lastReadSurahName") private var lastReadSurahName = "Al-Fatihah"
     @AppStorage("lastReadVerse") private var lastReadVerse = 1
-    @AppStorage("readingProgress") private var readingProgress: Double = 0.0
+    
+    // MARK: - App Storage (Khatmah Reading - ISOLATED)
+    @AppStorage("khatmahLastReadSurah") private var khatmahSurah = 1
+    @AppStorage("khatmahLastReadSurahName") private var khatmahSurahName = "Al-Fatihah"
+    @AppStorage("khatmahLastReadVerse") private var khatmahVerse = 1
     
     // Reader Settings
     @AppStorage("arabicFont") private var arabicFont: String = "Amiri"
@@ -36,21 +45,70 @@ struct ContentView: View {
     
     // MARK: - State
     @State private var activeTab: Tab = .home
+    @State private var selectedHomeTab: HomeTab = .daily // Controls the Home Screen Toggle
     @State private var selectedMood: String = ""
     @State private var currentComfortVerse: JSONVerse? = nil
     @State private var showingKhatmahSheet = false
     @State private var searchClearTrigger: Int = 0
     
-    let moods = [
+    // Holds the 4 randomized moods shown on screen
+    @State private var activeMoods: [(String, String)] = []
+    
+    @Namespace private var homeAnimationNamespace
+    
+    let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
+    let accentGold = Color(red: 0.83, green: 0.67, blue: 0.51)
+    
+    // Master list of all emotions
+    let masterMoods = [
         ("🥺 Anxious", "anxious"),
         ("😔 Sad", "sad"),
         ("😰 Stressed", "stressed"),
-        ("🤲 Grateful", "grateful")
+        ("🤲 Grateful", "grateful"),
+        ("🕊️ Peace", "peace"),
+        ("😊 Happy", "happy"),
+        ("✨ Hopeful", "hope"),
+        ("❤️ Forgiveness", "forgiveness"),
+        ("😵 Overwhelmed", "overwhelmed"),
+        ("😨 Fearful", "fear"),
+        ("🍃 Patient", "hardship"),
+        ("😔 Lonely", "lonely")
     ]
+    
+    // Hardcoded array of verses for all 114 Surahs for instant, 100% accurate mathematical tracking
+    private let versesPerSurah = [7, 286, 200, 176, 120, 165, 206, 75, 129, 109, 123, 111, 43, 52, 99, 128, 111, 110, 98, 135, 112, 78, 118, 64, 77, 227, 93, 88, 69, 60, 34, 30, 73, 54, 45, 83, 182, 88, 75, 85, 54, 53, 89, 59, 37, 35, 38, 29, 18, 45, 60, 49, 62, 55, 78, 96, 29, 22, 24, 13, 14, 11, 11, 18, 12, 12, 30, 52, 52, 44, 28, 28, 20, 56, 40, 31, 50, 40, 46, 42, 29, 19, 36, 25, 22, 17, 19, 26, 30, 20, 15, 21, 11, 8, 8, 19, 5, 8, 8, 11, 11, 8, 3, 9, 5, 4, 7, 3, 6, 3, 5, 4, 5, 6]
+    
+    // MARK: - Dynamic Progress Calculations
+    
+    private var totalVersesInCurrentSurah: Int {
+        let safeSurah = max(1, min(lastReadSurah, 114))
+        return versesPerSurah[safeSurah - 1]
+    }
+    
+    private var surahProgress: Double {
+        let safeVerse = Double(max(1, lastReadVerse))
+        let percentage = safeVerse / Double(totalVersesInCurrentSurah)
+        return min(max(percentage, 0.0), 1.0)
+    }
+    
+    private var khatmahProgress: Double {
+        let totalVersesInQuran = 6236.0
+        let safeSurah = max(1, min(khatmahSurah, 114))
+        
+        var completedVerses = 0
+        for i in 0..<(safeSurah - 1) {
+            completedVerses += versesPerSurah[i]
+        }
+        completedVerses += max(0, khatmahVerse - 1)
+        
+        let percentage = Double(completedVerses) / totalVersesInQuran
+        return min(max(percentage, 0.0), 1.0)
+    }
     
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
+                // Background Layer (Dismisses keyboard if tapped)
                 Group {
                     if isDarkMode {
                         Color(red: 0.10, green: 0.12, blue: 0.11)
@@ -59,6 +117,9 @@ struct ContentView: View {
                     }
                 }
                 .ignoresSafeArea()
+                .onTapGesture {
+                    hideKeyboard()
+                }
                 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 24) {
@@ -68,7 +129,11 @@ struct ContentView: View {
                         case .settings:  SettingsView()
                         }
                     }
-                    .padding(.bottom, 100)
+                    .padding(.bottom, 140)
+                }
+                .scrollDismissesKeyboard(.interactively)
+                .onTapGesture {
+                    hideKeyboard()
                 }
                 
                 floatingTabBar
@@ -76,10 +141,11 @@ struct ContentView: View {
             }
             .navigationTitle(activeTab == .home ? "" : (activeTab == .settings ? "Settings" : "Qibla"))
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { themeToggle }
         }
         .preferredColorScheme(isDarkMode ? .dark : .light)
         .onAppear {
+            activeMoods = Array(masterMoods.shuffled().prefix(4))
+            
             DispatchQueue.global(qos: .background).async {
                 let _ = quranManager.verses.count
             }
@@ -102,6 +168,10 @@ struct ContentView: View {
             }
         }
     }
+    
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
 }
 
 // MARK: - Home View Subcomponents
@@ -112,45 +182,111 @@ extension ContentView {
             moodAndSearchSection
                 .padding(.top, 16)
             comfortVerseSection
-            progressDashboard
+            
+            // The Master Toggle for the Dashboard
+            homeTabToggle
+            
+            // Dynamic Dashboard Swapping
+            if selectedHomeTab == .daily {
+                dailyDashboard
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            } else {
+                khatmahDashboard
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            }
+            
             quickLinksGrid
             learningAreaButton
         }
+        .animation(.easeInOut(duration: 0.3), value: selectedHomeTab)
+        .sheet(isPresented: $showingKhatmahSheet) {
+            KhatmahSettingsSheet()
+                .presentationDetents([.medium, .large])
+        }
     }
     
-    // 1. Mood & Search
-    private var moodAndSearchSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("How is your heart today?")
-                .font(.system(.body, design: .serif))
-                .foregroundColor(.gray)
-                .padding(.horizontal, 24)
-            
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    Spacer().frame(width: 16)
-                    ForEach(moods, id: \.1) { label, key in
-                        Button(action: {
-                            searchClearTrigger += 1
-                            selectedMood = key
-                            triggerFastSearch(for: key)
-                        }) {
-                            Text(label)
-                                .font(.system(.subheadline, design: .serif))
-                                .foregroundColor(selectedMood == key ? .white : (isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20)))
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 10)
-                                .background(
-                                    selectedMood == key ?
-                                    Color(red: 0.38, green: 0.48, blue: 0.43) :
-                                    (isDarkMode ? Color.white.opacity(0.08) : Color.white)
-                                )
-                                .clipShape(Capsule())
+    // MARK: - Home Tab Toggle UI
+    private var homeTabToggle: some View {
+        HStack(spacing: 0) {
+            homeTabButton(title: "Daily Focus", tab: .daily)
+            homeTabButton(title: "Khatmah", tab: .khatmah)
+        }
+        .padding(4)
+        .background(isDarkMode ? Color.white.opacity(0.1) : Color.gray.opacity(0.12))
+        .clipShape(Capsule())
+        .padding(.horizontal, 24)
+    }
+    
+    @ViewBuilder
+    private func homeTabButton(title: String, tab: HomeTab) -> some View {
+        Button(action: {
+            let impact = UIImpactFeedbackGenerator(style: .light)
+            impact.impactOccurred()
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.75)) {
+                selectedHomeTab = tab
+            }
+            hideKeyboard()
+        }) {
+            Text(title)
+                .font(.system(.subheadline, design: .serif))
+                .fontWeight(selectedHomeTab == tab ? .bold : .medium)
+                .foregroundColor(selectedHomeTab == tab ? .white : (isDarkMode ? .gray : .gray))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .contentShape(Rectangle())
+                .background(
+                    ZStack {
+                        if selectedHomeTab == tab {
+                            Capsule()
+                                .fill(sageGreen)
+                                .matchedGeometryEffect(id: "HOME_TAB", in: homeAnimationNamespace)
                         }
                     }
-                    Spacer().frame(width: 16)
+                )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    // MARK: - 1. Mood & Search (Strictly Uniform 4-Emotion Row)
+    private var moodAndSearchSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("How is your heart today?")
+                    .font(.system(.body, design: .serif))
+                    .foregroundColor(.gray)
+                
+                Spacer()
+                
+                themeToggle
+            }
+            .padding(.horizontal, 24)
+            
+            // 🌟 Exactly 4 uniform columns spanning the screen width identically
+            HStack(spacing: 8) {
+                ForEach(activeMoods, id: \.1) { label, key in
+                    Button(action: {
+                        hideKeyboard()
+                        searchClearTrigger += 1
+                        selectedMood = key
+                        triggerFastSearch(for: key)
+                    }) {
+                        Text(label)
+                            .font(.system(size: 11, weight: .semibold, design: .serif))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5) // Scales down cleanly if text is long
+                            .foregroundColor(selectedMood == key ? .white : (isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20)))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 42) // 🌟 Strict fixed height ensures absolute uniformity
+                            .background(
+                                selectedMood == key ?
+                                Color(red: 0.38, green: 0.48, blue: 0.43) :
+                                (isDarkMode ? Color.white.opacity(0.08) : Color.white)
+                            )
+                            .clipShape(Capsule())
+                    }
                 }
             }
+            .padding(.horizontal, 24)
             
             IsolatedSearchBar(clearTrigger: $searchClearTrigger, isDarkMode: isDarkMode) { query in
                 selectedMood = ""
@@ -159,7 +295,7 @@ extension ContentView {
         }
     }
     
-    // 2. Comfort Verse Result
+    // MARK: - 2. Comfort Verse Result
     @ViewBuilder
     private var comfortVerseSection: some View {
         if let verse = currentComfortVerse {
@@ -168,14 +304,32 @@ extension ContentView {
                     Text("Surah \(verse.surahNumber) : Verse \(verse.verseNumber)")
                         .font(.system(.caption, design: .monospaced)).bold()
                         .foregroundColor(Color(red: 0.38, green: 0.48, blue: 0.43))
+                    
                     Spacer()
+                    
                     Button(action: {
+                        hideKeyboard()
                         let target = selectedMood.isEmpty ? "peace" : selectedMood
                         triggerFastSearch(for: target)
                     }) {
                         Image(systemName: "arrow.clockwise")
                             .foregroundColor(.gray)
-                            .padding(8)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 8)
+                            .contentShape(Rectangle())
+                    }
+                    
+                    Button(action: {
+                        hideKeyboard()
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            currentComfortVerse = nil
+                        }
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.gray.opacity(0.8))
+                            .padding(.leading, 4)
+                            .padding(.vertical, 8)
                             .contentShape(Rectangle())
                     }
                 }
@@ -197,23 +351,45 @@ extension ContentView {
         }
     }
     
-    // 3. Unified Spiritual Progress Dashboard
-    private var progressDashboard: some View {
+    // MARK: - 3A. Daily Dashboard
+    private var dailyDashboard: some View {
         VStack(spacing: 0) {
             NavigationLink(destination: QuranReaderView(surahNumber: lastReadSurah, surahName: lastReadSurahName)) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Continue Reading")
-                            .font(.system(.title3, design: .serif)).bold()
-                            .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
-                        Text("\(lastReadSurahName) • Verse \(lastReadVerse)")
-                            .font(.system(.subheadline, design: .serif))
-                            .foregroundColor(.gray)
+                VStack(spacing: 16) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Casual Reading")
+                                .font(.system(.title3, design: .serif)).bold()
+                                .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
+                            
+                            Text("\(lastReadSurahName) • \(lastReadVerse) / \(totalVersesInCurrentSurah)")
+                                .font(.system(.subheadline, design: .serif))
+                                .foregroundColor(.gray)
+                        }
+                        Spacer()
+                        Image(systemName: "play.circle.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(sageGreen)
                     }
-                    Spacer()
-                    Image(systemName: "play.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundColor(Color(red: 0.38, green: 0.48, blue: 0.43))
+                    
+                    HStack(spacing: 12) {
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule()
+                                    .fill(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                                    .frame(height: 6)
+                                
+                                Capsule()
+                                    .fill(sageGreen)
+                                    .frame(width: geo.size.width * CGFloat(surahProgress), height: 6)
+                            }
+                        }
+                        .frame(height: 6)
+                        
+                        Text("\(Int(surahProgress * 100))%")
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundColor(sageGreen)
+                    }
                 }
                 .padding(20)
                 .contentShape(Rectangle())
@@ -250,7 +426,7 @@ extension ContentView {
                 VStack(alignment: .trailing, spacing: 4) {
                     HStack(spacing: 4) {
                         Image(systemName: "sparkles")
-                            .foregroundColor(Color(red: 0.83, green: 0.67, blue: 0.51))
+                            .foregroundColor(accentGold)
                         Text("\(totalHasanat.formatted())")
                             .font(.system(.subheadline, design: .rounded)).bold()
                     }
@@ -261,73 +437,131 @@ extension ContentView {
             }
             .padding(20)
             .background(isDarkMode ? Color.white.opacity(0.02) : Color(red: 0.98, green: 0.98, blue: 0.96))
-            
-            Divider().padding(.horizontal, 20)
-            
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "book.closed.fill")
-                            .foregroundColor(Color(red: 0.38, green: 0.48, blue: 0.43))
-                        Text("Khatmah Goal")
-                            .font(.system(.subheadline, design: .serif)).bold()
-                            .foregroundColor(isDarkMode ? .white : Color(red: 0.18, green: 0.23, blue: 0.20))
-                    }
-                    Text(khatmahManager.isKhatmahActive ? "\(khatmahManager.daysRemaining) days left (\(Int(readingProgress * 100))%)" : "Not Started")
-                        .font(.system(size: 11))
-                        .foregroundColor(.gray)
-                }
-                
-                Spacer()
-                
-                Button(action: {
-                    showingKhatmahSheet = true
-                }) {
-                    Text(khatmahManager.isKhatmahActive ? "Configure" : "Start Khatmah")
-                        .font(.system(size: 12, design: .serif)).bold()
-                        .foregroundColor(Color(red: 0.38, green: 0.48, blue: 0.43))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color(red: 0.38, green: 0.48, blue: 0.43).opacity(0.1))
-                        .clipShape(Capsule())
-                }
-            }
-            .padding(20)
         }
         .background(isDarkMode ? Color.white.opacity(0.06) : Color.white)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.03), radius: 8, x: 0, y: 4)
         .padding(.horizontal, 24)
-        .sheet(isPresented: $showingKhatmahSheet) {
-            KhatmahSettingsSheet()
-                .presentationDetents([.medium])
-        }
     }
     
-    // 4. Quick Links
+    // MARK: - 3B. Khatmah Dashboard
+    private var khatmahDashboard: some View {
+        VStack(spacing: 24) {
+            ZStack {
+                Circle()
+                    .stroke(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05), lineWidth: 16)
+                    .frame(width: 140, height: 140)
+                
+                Circle()
+                    .trim(from: 0.0, to: CGFloat(khatmahProgress))
+                    .stroke(
+                        LinearGradient(colors: [sageGreen, accentGold], startPoint: .topLeading, endPoint: .bottomTrailing),
+                        style: StrokeStyle(lineWidth: 16, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: 140, height: 140)
+                    .shadow(color: sageGreen.opacity(0.3), radius: 10, x: 0, y: 5)
+                
+                VStack(spacing: 4) {
+                    Text(String(format: "%.1f%%", khatmahProgress * 100))
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundColor(isDarkMode ? .white : .black)
+                    
+                    Text("Completed")
+                        .font(.system(size: 10, weight: .medium, design: .serif))
+                        .foregroundColor(.gray)
+                        .textCase(.uppercase)
+                }
+            }
+            .padding(.top, 16)
+            
+            VStack(spacing: 16) {
+                if khatmahManager.isKhatmahActive {
+                    VStack(spacing: 4) {
+                        Text("\(khatmahSurahName) • Verse \(khatmahVerse)")
+                            .font(.system(.headline, design: .serif))
+                            .foregroundColor(isDarkMode ? .white : .black)
+                        Text("\(khatmahManager.daysRemaining) days remaining to hit your goal")
+                            .font(.system(.subheadline, design: .serif))
+                            .foregroundColor(.gray)
+                    }
+                    
+                    HStack(spacing: 12) {
+                        NavigationLink(destination: KhatmahReaderView()) {
+                            Text("Continue Reading")
+                                .font(.system(size: 14, weight: .bold, design: .serif))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .background(sageGreen)
+                                .clipShape(Capsule())
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        
+                        Button(action: { showingKhatmahSheet = true }) {
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 18))
+                                .foregroundColor(isDarkMode ? .white : .black)
+                                .padding(14)
+                                .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                                .clipShape(Circle())
+                        }
+                    }
+                    .padding(.top, 8)
+                    
+                } else {
+                    VStack(spacing: 4) {
+                        Text("Start a New Khatmah")
+                            .font(.system(.headline, design: .serif))
+                            .foregroundColor(isDarkMode ? .white : .black)
+                        Text("Commit to completing the entire Quran.")
+                            .font(.system(.subheadline, design: .serif))
+                            .foregroundColor(.gray)
+                    }
+                    
+                    Button(action: { showingKhatmahSheet = true }) {
+                        Text("Configure Goal")
+                            .font(.system(size: 14, weight: .bold, design: .serif))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(accentGold)
+                            .clipShape(Capsule())
+                    }
+                    .padding(.top, 8)
+                }
+            }
+        }
+        .padding(24)
+        .background(isDarkMode ? Color.white.opacity(0.06) : Color.white)
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.04), radius: 10, x: 0, y: 5)
+        .padding(.horizontal, 24)
+    }
+    
+    // MARK: - 4. Quick Links
     private var quickLinksGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
             NavigationLink(destination: SurahListView(showFavoritesOnly: false)) {
-                pageCard(title: "The Holy Quran", icon: "book.fill", bgColor: Color(red: 0.38, green: 0.48, blue: 0.43))
+                compactCard(title: "The Quran", icon: "book.fill", bgColor: sageGreen)
             }.buttonStyle(PlainButtonStyle())
             
             NavigationLink(destination: DailyDuasView()) {
-                pageCard(title: "Daily Duas", icon: "hands.sparkles.fill", bgColor: Color(red: 0.52, green: 0.61, blue: 0.56))
-            }
-            .buttonStyle(PlainButtonStyle())
+                compactCard(title: "Daily Duas", icon: "hands.sparkles.fill", bgColor: Color(red: 0.52, green: 0.61, blue: 0.56))
+            }.buttonStyle(PlainButtonStyle())
             
             NavigationLink(destination: BookmarksView()) {
-                pageCard(title: "Bookmarks", icon: "bookmark.fill", bgColor: Color(red: 0.38, green: 0.48, blue: 0.43))
+                compactCard(title: "Bookmarks", icon: "bookmark.fill", bgColor: sageGreen)
             }.buttonStyle(PlainButtonStyle())
             
             NavigationLink(destination: SurahListView(showFavoritesOnly: true)) {
-                pageCard(title: "Favourite Surahs", icon: "heart.fill", bgColor: Color(red: 0.83, green: 0.67, blue: 0.51), iconColor: .red)
+                compactCard(title: "Favorites", icon: "heart.fill", bgColor: accentGold, iconColor: .red)
             }.buttonStyle(PlainButtonStyle())
         }
         .padding(.horizontal, 24)
     }
     
-    // 5. Guides & Learning Big Button
+    // MARK: - 5. Guides & Learning Big Button
     private var learningAreaButton: some View {
         NavigationLink(destination: LearningAreaContainerView(isDarkMode: isDarkMode)) {
             HStack(spacing: 16) {
@@ -349,7 +583,7 @@ extension ContentView {
             }
             .padding(24)
             .frame(maxWidth: .infinity)
-            .background(Color(red: 0.38, green: 0.48, blue: 0.43))
+            .background(sageGreen)
             .cornerRadius(16)
             .shadow(color: Color.black.opacity(0.1), radius: 8, x: 0, y: 4)
             .contentShape(Rectangle())
@@ -364,37 +598,110 @@ struct KhatmahSettingsSheet: View {
     @EnvironmentObject var khatmahManager: KhatmahManager
     @Environment(\.dismiss) private var dismiss
     
+    @AppStorage("khatmahLastReadSurah") private var khatmahSurah = 1
+    @AppStorage("khatmahLastReadSurahName") private var khatmahSurahName = "Al-Fatihah"
+    @AppStorage("khatmahLastReadVerse") private var khatmahVerse = 1
+    
+    @AppStorage("lastReadSurah") private var casualSurah = 1
+    @AppStorage("lastReadSurahName") private var casualSurahName = "Al-Fatihah"
+    @AppStorage("lastReadVerse") private var casualVerse = 1
+    
     @State private var selectedDays: Int = 30
+    @State private var startFromBeginning: Bool = true
+    @State private var enableReminders: Bool = false
+    @State private var reminderTime: Date = Date()
+    
     let presetDays = [7, 15, 30, 60, 90, 120]
+    let sageGreen = Color(red: 0.38, green: 0.48, blue: 0.43)
+    @AppStorage("isDarkMode") private var isDarkMode = false
+    
+    private var targetDateString: String {
+        guard let targetDate = Calendar.current.date(byAdding: .day, value: selectedDays, to: Date()) else { return "" }
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        return formatter.string(from: targetDate)
+    }
     
     var body: some View {
         NavigationStack {
             Form {
-                Section(header: Text("Choose Khatmah Duration")) {
-                    Picker("Target Days", selection: $selectedDays) {
+                Section(header: Text("Khatmah Duration")) {
+                    let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+                    
+                    LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(presetDays, id: \.self) { days in
-                            Text("\(days) Days").tag(days)
+                            Button(action: {
+                                let impact = UIImpactFeedbackGenerator(style: .light)
+                                impact.impactOccurred()
+                                selectedDays = days
+                            }) {
+                                Text("\(days) Days")
+                                    .font(.system(size: 14, weight: selectedDays == days ? .bold : .medium, design: .serif))
+                                    .foregroundColor(selectedDays == days ? .white : (isDarkMode ? .white : .black))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 10)
+                                    .background(selectedDays == days ? sageGreen : (isDarkMode ? Color.white.opacity(0.1) : Color.gray.opacity(0.1)))
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
-                    .pickerStyle(.segmented)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 8)
                     
-                    Text("This breaks down the Holy Quran into a daily reading goal tailored to a \(selectedDays)-day completion schedule.")
-                        .font(.system(.caption, design: .serif))
-                        .foregroundColor(.gray)
+                    HStack {
+                        Image(systemName: "calendar.badge.clock")
+                            .foregroundColor(sageGreen)
+                        Text("Target Completion: ")
+                            .foregroundColor(.gray)
+                        + Text(targetDateString)
+                            .foregroundColor(sageGreen)
+                            .bold()
+                    }
+                    .font(.system(.caption, design: .serif))
+                    .padding(.top, 4)
+                }
+                
+                Section(header: Text("Starting Point")) {
+                    Toggle("Start from Al-Fatihah", isOn: $startFromBeginning)
+                        .tint(sageGreen)
+                    
+                    if !startFromBeginning {
+                        Text("You will start from your current casual reading position: \(casualSurahName), Verse \(casualVerse).")
+                            .font(.system(.caption, design: .serif))
+                            .foregroundColor(.gray)
+                    }
+                }
+                
+                Section(header: Text("Daily Habit")) {
+                    Toggle("Enable Daily Reminder", isOn: $enableReminders)
+                        .tint(sageGreen)
+                    
+                    if enableReminders {
+                        DatePicker("Reminder Time", selection: $reminderTime, displayedComponents: .hourAndMinute)
+                    }
                 }
                 
                 Section {
                     Button(action: {
+                        if startFromBeginning {
+                            khatmahSurah = 1
+                            khatmahVerse = 1
+                            khatmahSurahName = "Al-Fatihah"
+                        } else {
+                            khatmahSurah = casualSurah
+                            khatmahVerse = casualVerse
+                            khatmahSurahName = casualSurahName
+                        }
+                        
                         khatmahManager.startKhatmah(days: selectedDays)
                         dismiss()
                     }) {
-                        Text(khatmahManager.isKhatmahActive ? "Update Goal" : "Start Khatmah")
+                        Text(khatmahManager.isKhatmahActive ? "Update Khatmah Goal" : "Begin Khatmah")
                             .font(.system(.body, design: .serif)).bold()
                             .frame(maxWidth: .infinity, alignment: .center)
                             .foregroundColor(.white)
                     }
-                    .listRowBackground(Color(red: 0.38, green: 0.48, blue: 0.43))
+                    .listRowBackground(sageGreen)
                     
                     if khatmahManager.isKhatmahActive {
                         Button(role: .destructive, action: {
@@ -416,7 +723,7 @@ struct KhatmahSettingsSheet: View {
                 }
             }
             .onAppear {
-                selectedDays = khatmahManager.khatmahDaysTarget
+                selectedDays = khatmahManager.khatmahDaysTarget == 0 ? 30 : khatmahManager.khatmahDaysTarget
             }
         }
     }
@@ -424,22 +731,26 @@ struct KhatmahSettingsSheet: View {
 
 // MARK: - Helpers
 extension ContentView {
-    private func pageCard(title: String, icon: String, bgColor: Color, iconColor: Color = .white) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+    private func compactCard(title: String, icon: String, bgColor: Color, iconColor: Color = .white) -> some View {
+        HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.title2)
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(iconColor)
-            Spacer()
+                .frame(width: 24, height: 24)
+            
             Text(title)
-                .font(.system(.body, design: .serif)).bold()
+                .font(.system(size: 14, weight: .bold, design: .serif))
                 .foregroundColor(.white)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+            
+            Spacer(minLength: 0)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .frame(minHeight: 110, maxHeight: 110)
-        .contentShape(Rectangle())
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity)
+        .frame(height: 56)
         .background(bgColor)
-        .cornerRadius(16)
+        .cornerRadius(14)
     }
     
     private var themeToggle: some View {
@@ -450,7 +761,8 @@ extension ContentView {
                 .foregroundColor(isDarkMode ? .yellow : .orange)
                 .font(.system(size: 16, weight: .semibold))
                 .padding(8)
-                .contentShape(Rectangle())
+                .background(isDarkMode ? Color.white.opacity(0.1) : Color.black.opacity(0.05))
+                .clipShape(Circle())
         }
     }
     
@@ -476,10 +788,10 @@ extension ContentView {
             VStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 20))
-                    .foregroundColor(activeTab == tab ? Color(red: 0.38, green: 0.48, blue: 0.43) : .gray)
+                    .foregroundColor(activeTab == tab ? sageGreen : .gray)
                 Text(name)
                     .font(.system(size: 11, design: .serif))
-                    .foregroundColor(activeTab == tab ? Color(red: 0.38, green: 0.48, blue: 0.43) : .gray)
+                    .foregroundColor(activeTab == tab ? sageGreen : .gray)
             }
             .frame(width: 60)
             .contentShape(Rectangle())
